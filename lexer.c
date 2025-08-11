@@ -96,30 +96,30 @@ t_token *lexer(const char *input) {                             // [L51]
         }                                                       // [L85]
 
         // 3) 普通 WORD（支持成对引号把内部空格包起来）              // [L86]
-        int start = i;                                          // [L87]
-        int in_squote = 0, in_dquote = 0;                       // [L88]
+        int start = i;
+        int in_squote = 0, in_dquote = 0;
 
-        while (input[i]) {                                      // [L89]
-            char c = input[i];                                  // [L90]
-            if (!in_dquote && c == '\'') {                      // [L91]
-                in_squote = !in_squote;                         // [L92]
-                i++;                                            // [L93]
-                continue;                                       // [L94]
-            }                                                   // [L95]
-            if (!in_squote && c == '\"') {                      // [L96]
-                in_dquote = !in_dquote;                         // [L97]
-                i++;                                            // [L98]
-                continue;                                       // [L99]
-            }                                                   // [L100]
+        while (input[i]) {
+            char c = input[i];
+            if (!in_dquote && c == '\'') { in_squote = !in_squote; i++; continue; }
+            if (!in_squote && c == '\"') { in_dquote = !in_dquote; i++; continue; }
 
-            // 引号外：遇到空白或 |<> 就结束这个 WORD                 // [L101]
-            if (!in_squote && !in_dquote &&                     // [L102]
-                (isspace((unsigned char)c) || is_special(c))) { // [L103]
-                break;                                          // [L104]
-            }                                                   // [L105]
+            // 引号外：遇到空白或 |<> 结束这个 WORD
+            if (!in_squote && !in_dquote &&
+                (isspace((unsigned char)c) || is_special(c))) {
+                break;
+            }
+            i++;
+        }
 
-            i++;                                                // [L106]
-        }                                                       // [L107]
+        if (in_squote || in_dquote) {
+            fprintf(stderr, "minishell: syntax error: unclosed quote\n");
+            /* 按 42 习惯：语法错误返回码 2，可在你的全局状态里设一下 */
+            // g_status = 2;
+            free_tokens(head);
+            return NULL;
+        }
+                                                       // [L107]
 
         // 取出 [start, i) 作为一个 WORD token                      // [L108]
         char *lex = substr(input, start, i - start);            // [L109]
@@ -136,7 +136,7 @@ t_token *lexer(const char *input) {                             // [L51]
 //============================= 一个小 main 用来演示 =====================
 
 int main(void) {                                                // [L116]
-    const char *line = "echo \"a b\" c | wc -l >";                // [L117]
+    const char *line = "echo \"a b\"";                // [L117]
     t_token *toks = lexer(line);                                // [L118]
     if (!toks) return 1;                                        // [L119]
     print_tokens(toks);                                         // [L120]
