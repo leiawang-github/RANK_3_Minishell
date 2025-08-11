@@ -1,4 +1,19 @@
+实现lexer其实是实现“状态机”---finite state machine， fsm：随着“当前状态”不同，对同一个输入字符采取不同的处理分支
+why？
+- 普通模式下遇到空格 → token 结束；
+- 引号模式下遇到空格 → 空格是 token 内容一部分。
+- < → 可能是 LESS 或 DLESS（看下一个字符是不是 <）。
+- > → 可能是 GREAT 或 DGREAT。
+- 在 here-doc 的定界词后，内容不展开变量（这也要依赖前一个 token 的状态）。
+- 单引号模式下的 $ → 不展开；双引号模式下的 $ → 允许展开（这是 expand 阶段用到的，但引号模式信息必须在 lexer 保存下来）。
+
+
 task：from int main(int argc, char **argv) -> catagorized tokens
+
+note：
+- 引号（"..."、'...'）本身不会是 token 类型，而是在 lexer 中就被去掉或保留原样作为 WORD 的一部分。
+- 变量展开（$VAR）也不会新建 token 类型，通常还是 WORD，只是执行前需要 expand。
+- 赋值语句（VAR=xxx）也算 WORD 类型，在 parser 中区分是赋值还是命令参数。
 
 for example1:
 if *line = readline("echo -n > print.md") was given，after lexer, this should be provided:
@@ -28,5 +43,25 @@ This one however will cause error msg:
 example3:
 *line = readline("'bin/local ./sccript")；we'll get:
 "minishell: syntax error: unclosed quote" warning sign, because lexer is supposed to have complete quotes.
+
+
+关于引号问题的处理：
+- 保留 token 的“内容”，去掉引号本身
+- 引号的作用是阻止分词和控制变量展开（单引号禁止展开，双引号允许展开）。
+所以 lexer 需要做的不是直接删掉引号，而是：
+-- 识别一对完整引号内的内容
+-- 按规则决定是否保留 $ 等特殊字符
+-- 把结果拼进一个完整的 WORD token
+
+```bash
+输入: echo "hello world"
+lexer 输出: [WORD:"echo"] [WORD:"hello world"]
+（引号去掉了，但空格被保留在内容中）
+```
+```bash
+输入: echo 'a $b'
+lexer 输出: [WORD:"echo"] [WORD:"a $b"]
+（引号去掉了，并且 $b 保留原样，不展开）
+```
 
 

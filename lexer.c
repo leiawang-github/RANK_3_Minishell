@@ -7,6 +7,36 @@
 #include <ctype.h>    // isspace
 
 //============================= 小工具函数 ===============================
+// ---- simple string buffer ----
+typedef struct s_sbuf {
+    char   *buf;
+    size_t  len;
+    size_t  cap;
+} t_sbuf;
+
+static int sbuf_init(t_sbuf *sb, size_t cap) {
+    sb->buf = (char*)malloc(cap ? cap : 32);
+    if (!sb->buf) return 0;
+    sb->len = 0;
+    sb->cap = cap ? cap : 32;
+    return 1;
+}
+static int sbuf_putc(t_sbuf *sb, char c) {
+    if (sb->len + 1 >= sb->cap) {
+        size_t ncap = sb->cap << 1;
+        char *n = (char*)realloc(sb->buf, ncap);
+        if (!n) return 0;
+        sb->buf = n; sb->cap = ncap;
+    }
+    sb->buf[sb->len++] = c;
+    return 1;
+}
+static char *sbuf_take(t_sbuf *sb) {
+    if (!sbuf_putc(sb, '\0')) return NULL;
+    char *out = sb->buf;
+    sb->buf = NULL; sb->len = sb->cap = 0;
+    return out;
+}
 
 // 复制 input[pos..pos+len-1] 为新字符串                         // [L14]
 static char *substr(const char *s, int pos, int len) {          // [L15]
@@ -96,37 +126,42 @@ t_token *lexer(const char *input) {                             // [L51]
         }                                                       // [L85]
 
         // 3) 普通 WORD（支持成对引号把内部空格包起来）              // [L86]
-        int start = i;
+        // 3) 普通 WORD（支持成对引号把内部空格包起来）              // [L86]
         int in_squote = 0, in_dquote = 0;
+        t_sbuf sb;
+        if (!sbuf_init(&sb, 32)) { free_tokens(head); return NULL; }
 
         while (input[i]) {
             char c = input[i];
+
+            // 引号本身不写入，只切换状态
             if (!in_dquote && c == '\'') { in_squote = !in_squote; i++; continue; }
             if (!in_squote && c == '\"') { in_dquote = !in_dquote; i++; continue; }
 
-            // 引号外：遇到空白或 |<> 结束这个 WORD
+            // 引号外：空白或 |<> 视为词边界（不消耗当前分隔符）
             if (!in_squote && !in_dquote &&
                 (isspace((unsigned char)c) || is_special(c))) {
                 break;
             }
+
+            // 其他字符写入词缓冲
+            if (!sbuf_putc(&sb, c)) { free_tokens(head); return NULL; }
             i++;
         }
 
         if (in_squote || in_dquote) {
             fprintf(stderr, "minishell: syntax error: unclosed quote\n");
-            /* 按 42 习惯：语法错误返回码 2，可在你的全局状态里设一下 */
-            // g_status = 2;
+            // g_status = 2; // 如果你有全局状态
+            free(sb.buf);
             free_tokens(head);
             return NULL;
         }
-                                                       // [L107]
 
-        // 取出 [start, i) 作为一个 WORD token                      // [L108]
-        char *lex = substr(input, start, i - start);            // [L109]
-        if (!lex) { free_tokens(head); return NULL; }           // [L110]
-        add_token(&head, &tail, TOK_WORD, lex);                 // [L111]
-        free(lex);                                              // [L112]
-        // 注意：这里不处理引号剥离/变量展开，这些留给 expander       // [L113]
+        // 取出无引号的词并发出 WORD token
+        char *lex = sbuf_take(&sb);
+        if (!lex) { free_tokens(head); return NULL; }
+        add_token(&head, &tail, TOK_WORD, lex);
+        free(lex);
     }                                                           // [L114]
 
     return head;                                                // [L115]
