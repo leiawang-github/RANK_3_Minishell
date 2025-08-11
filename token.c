@@ -136,7 +136,7 @@ t_token *lexer(const char *input) {                             // [L51]
 //============================= 一个小 main 用来演示 =====================
 
 int main(void) {                                                // [L116]
-    const char *line = "echo \"a b\" c | wc -l";                // [L117]
+    const char *line = "echo \"a b\" c | wc -l >";                // [L117]
     t_token *toks = lexer(line);                                // [L118]
     if (!toks) return 1;                                        // [L119]
     print_tokens(toks);                                         // [L120]
