@@ -100,26 +100,26 @@ t_token *lexer(const char *input) {                             // [L51]
 
         // 2) 处理运算符：|  <<  >>  <  >                           // [L60]
         if (input[i] == '|') {                                  // [L61]
-            add_token(&head, &tail, TOK_PIPE, "|");             // [L62]
+            add_token(&head, &tail, PIPE, "|");             // [L62]
             i++;                                                // [L63]
             continue;                                           // [L64]
         }                                                       // [L65]
         if (input[i] == '<') {                                  // [L66]
             if (input[i+1] == '<') {                            // [L67]
-                add_token(&head, &tail, TOK_HEREDOC, "<<");     // [L68]
+                add_token(&head, &tail, HEREDOC, "<<");     // [L68]
                 i += 2;                                         // [L69]
             } else {                                            // [L70]
-                add_token(&head, &tail, TOK_REDIR_IN, "<");     // [L71]
+                add_token(&head, &tail, REDIR_IN, "<");     // [L71]
                 i++;                                            // [L72]
             }                                                   // [L73]
             continue;                                           // [L74]
         }                                                       // [L75]
         if (input[i] == '>') {                                  // [L76]
             if (input[i+1] == '>') {                            // [L77]
-                add_token(&head, &tail, TOK_REDIR_APP, ">>");   // [L78]
+                add_token(&head, &tail, REDIR_APP, ">>");   // [L78]
                 i += 2;                                         // [L79]
             } else {                                            // [L80]
-                add_token(&head, &tail, TOK_REDIR_OUT, ">");    // [L81]
+                add_token(&head, &tail, REDIR_OUT, ">");    // [L81]
                 i++;                                            // [L82]
             }                                                   // [L83]
             continue;                                           // [L84]
@@ -160,7 +160,7 @@ t_token *lexer(const char *input) {                             // [L51]
         // 取出无引号的词并发出 WORD token
         char *lex = sbuf_take(&sb);
         if (!lex) { free_tokens(head); return NULL; }
-        add_token(&head, &tail, TOK_WORD, lex);
+        add_token(&head, &tail, WORD, lex);
         free(lex);
     }                                                           // [L114]
 
@@ -170,11 +170,12 @@ t_token *lexer(const char *input) {                             // [L51]
 
 //============================= 一个小 main 用来演示 =====================
 
-int main(void) {                                                // [L116]
-    const char *line = "echo \"a b\"";                // [L117]
-    t_token *toks = lexer(line);                                // [L118]
-    if (!toks) return 1;                                        // [L119]
-    print_tokens(toks);                                         // [L120]
-    free_tokens(toks);                                          // [L121]
-    return 0;                                                   // [L122]
+int main(void)
+{                                                         
+    const char *line = "echo -n > out.md | wc -l"; 
+    t_token *toks = lexer(line);                                
+    if (!toks) return 1;                                      
+    print_tokens(toks);                                         
+    free_tokens(toks);                                          
+    return 0;                                                   
 }

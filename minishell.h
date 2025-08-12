@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/11 22:42:33 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/08/12 15:24:59 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,24 +19,57 @@
 #include <ctype.h>
 #include <readline/readline.h>
 
+//token types: 6 types
+typedef enum s_token_type {
+    T_WORD,
+	T_PIPE,
+	T_REDIR_IN,
+	t_REDIR_OUT,
+	T_REDIR_APP,
+	T_HEREDOC
+} t_token_type;
 
-//token
-typedef enum e_toktype {
-    TOK_WORD,
-	TOK_PIPE,
-	TOK_REDIR_IN,
-	TOK_REDIR_OUT,
-	TOK_REDIR_APP,
-	TOK_HEREDOC
-} t_toktype;
+//qoutes types: no /single/ double, 3 types
+typedef enum e_qtype {
+    Q_NONE = 0,
+    Q_SQUOTE = 1,
+    Q_DQUOTE = 2
+} t_qtype;
 
 typedef struct s_token {
-    t_toktype       type;
+    t_token_type       type;
     char           *lexeme;      // 原样存放（含引号）
     int             has_squote;  // 可选：此词是否被单引号包裹（或包含单引号片段）
     int             has_dquote; 
     struct s_token *next;
 } t_token;
+
+//cmd_assign ---------- 变量赋值 如：A=1 B="x y" ----------
+typedef struct s_assign {
+    char *key;            // "A"
+    char *val;            // "1"（去引号、已做变量展开后）
+    t_qtype qtype;        // 赋值右值的引号语义（需要的话）
+    struct s_assign *next;
+} t_assign;
+
+//cmd_redir ---------- 重定向：<in  >out  >>app  <<heredoc ----------
+typedef enum s_redir_type{
+    R_REDIR_IN,
+    R_REDIR_OUT,
+    R_REDIR_APPEND,
+    R_REDIR_HEREDOC
+} t_redir_type;
+
+
+//cmd_node_format
+typedef struct s_cmd {
+    t_assign  *assigns;
+    char     **cmd_argv;           // ["echo","-n",NULL]
+    t_redir_type   *redirs;
+    int        assigns_only;   // 没有 argv，仅赋值：A=1 B=2   → 影响环境处理
+    struct s_cmd *next;        // 管道里的下一个简单命令
+} t_cmd;
+
 
 
 
