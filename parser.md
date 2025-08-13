@@ -1,6 +1,17 @@
 1、parser干什么？parser把tokens变成一条pipeline linked list，每个节点是一个简单命令，包含了简单命令（simple caommand）需要
 具备的一个或多个元素；如果tokens里面有｜pipe，以pipe为界限截取节点。也就是说，如果token里面没有pipe，理论上只有一个节点；如果有一条pipe，有两个节点，如果有两条pipe，有三个节点。。。
 
+
+readline ──> LEXER(tokens) ──> PARSER(simple_cmd 节点)   <-!parser就是处理这部分
+                                   │
+                                   ├─ assigns 链表（A=1…）
+                                   ├─ argv 数组（命令名+参数）
+                                   └─ redirs 链表（重定向记录）
+                                                │
+                                                └─ EXECUTOR 依次应用重定向 → execve()
+
+
+
 整体流程应该满足：
 a、split_by_pipe函数；将tokens（是一个linked list）分成多个节点，返回的还是linked list 里面的nodes
 b、build_simple_cmd 函数：对上面的node内容进行扫描：如果是一个WORD类型（lexer里面定义的数字0）->推入cmd_argv;如果是重定向符号，也就是遇到了数字（2，3，4，5）->读取一个 WORD 作为 filename，挂到 redir 列表（并做互斥/覆盖规则检查）；任何语法错误（重定向后不是 WORD、段为空等）即时报错；更加具体执行：
