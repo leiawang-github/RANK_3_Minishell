@@ -1,8 +1,10 @@
-INPUT: t_cmd
-fields:
-  - assigns[]         # VAR=VALUE 列表（前置赋值）
-  - argv[]            # argv[0]=cmd_name 或 NULL
-  - redirs[]          # <  >  >>  << （heredoc 已在parser阶段准备好）
+INPUT: t_simple_cmd
+
+- count how many nodes, namely, simple_cmds in the pipe linked list
+- create count-1 pipes
+- go through redirs linked list in t_simple_cmd
+
+
 
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Step 0: 形态判定                                                      │
