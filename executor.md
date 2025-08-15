@@ -4,8 +4,6 @@ INPUT: t_simple_cmd
 - create count-1 pipes
 - go through redirs linked list in t_simple_cmd
 
-
-
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Step 0: 形态判定                                                      │
 └───────────────┬──────────────────────────────────────────────────────┘
@@ -68,3 +66,101 @@ INPUT: t_simple_cmd
                                                       }
                                                       // 父进程
                                                       return wait_and_collect(pid)
+
+Just an example：
+
+- If the input is:
+```bash
+ls | grep foo | wc -l
+```
+
+- After lexer it will be a token linked list:
+[WORD, "ls"] -> [PIPE,"|"] -> [WORD, "grep"] -> [WORD, "foo"] -> [PIPE, "|"] -> [WORD, "wc"] -> [WORD, "-l"]
+
+- After Parser it will be a t_simple_cmd 链表:
+```rust
+┌───────────────────────────────┐
+│ assign = NULL                 │  ← 环境变量赋值数组，NULL表示无
+│ argv   = ["ls", NULL]         │  ← 命令 + 参数数组
+│ redirs = NULL                 │  ← 重定向链表，NULL表示无
+└─────────────┬─────────────────┘
+              │ next
+┌───────────────────────────────┐
+│ assign = NULL                 │
+│ argv   = ["grep", "foo", NULL]│
+│ redirs = NULL                 │
+└─────────────┬─────────────────┘
+              │ next
+┌───────────────────────────────┐
+│ assign = NULL                 │
+│ argv   = ["wc", "-l", NULL]   │
+│ redirs = NULL                 │
+└─────────────┬─────────────────┘
+              │ next
+             NULL
+
+```
+
+- After executor： first we know there will be three nodes, which means we need 2 pipes to connect them:
+```rust
+pipefds[0] = {fd[0], fd[1]}   // pipe 0：ls | grep foo
+pipefds[1] = {fd[0], fd[1]}   // pipe 1：grep foo | wc -l
+```
+
+we need to arrange correct stdin/stdout for three t_simple_cmds, namely three processes:
+```rust
+Child Process 1 (ls)
+stdin = default (terminal/file)
+stdout = pipefds[0][1] (writes to grep's input)
+
+Child Process 2 (grep foo)
+stdin = pipefds[0][0] (reads from ls's output)
+stdout = pipefds[1][1] (writes to wc's input)
+
+Child Process 3 (wc -l)
+stdin = pipefds[1][0] (reads from grep's output)
+stdout = default (terminal)
+```
+
+```c
+
+int executor(t_list *simple_cmd_list)
+{
+    int count = count_nodes(simple_cmd_list);
+    t_list *node = simple_cmd_list;
+    for (int i = 0; i < count && node; i++, node = node->next)
+    {
+        cmd_var_status((t_simple_cmd *)node->content, count, i);
+    }
+    wait_all_children(); // pipeline 等待
+    return 0;
+}
+
+
+int cmd_var_status(t_simple_cmd *cmd)
+{
+    if (!cmd->assigns && !cmd->argv && !cmd->redirs)
+        return 0;
+
+    if (!cmd->argv)
+    {
+        if (cmd->redirs && (backup_fds(), apply_redirs_in_parent(cmd->redirs) < 0))
+            return restore_fds(), 1;
+        if (cmd->assigns)
+            apply_assigns_to_shell(cmd->assigns);
+        if (cmd->redirs)
+            restore_fds();
+        return 0;
+    }
+    if (cmd->argv)
+    {
+        if (!cmd->redirs)
+            fork_and_exec_with_assigns(cmd);
+        else
+            fork_and_exec_with_redirs_and_assigns(cmd);
+    }
+    return 0;
+}
+
+```
+

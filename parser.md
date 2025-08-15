@@ -49,7 +49,7 @@ PARSER
                                         ├─ token == << (heredoc)
                                         │      ├─ redir->type = HEREDOC
                                         │      ├─ redir->delimiter = WORD
-                                        │      ├─ redir->do_expand = (no quotes ? 1 : 0)
+                                        │      ├─ redir->do_expand = (no quotes ? 1 :0)
                                         │
                                         └─ token in {<, >, >>}
                                                ├─ redir->type = IN / OUT / APPEND
@@ -151,10 +151,6 @@ t_cmd* pipeline_head
     └──────────┘                    └──────────┘
       argv: echo -n                   argv: wc -l
       > out.md                        (no redir)
-
-
-
-
 
 
 
