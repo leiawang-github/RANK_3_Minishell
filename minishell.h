@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/14 21:24:30 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/08/17 21:10:59 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,15 +68,24 @@ typedef struct s_redir {
     struct s_redir *next;   // pointer for linking multiple redirs
 }   t_redir;
 
+//
+typedef enum e_cmd_type {
+    CMD_ASSIGN_ONLY,
+    CMD_REDIR_ONLY,
+    CMD_ASSIGN_ADN_REDIR,
+    CMD_WITH_ARGV
+}   t_cmd_type;
+
 
 //cmd_node_format
 typedef struct s_simple_cmd {
-    t_assign  *assigns; //是一个链表，因为可以有多个赋值
-    char     **cmd_argv;           // ["echo","-n",NULL]
-    t_redir   *redirs; //是一个链表，因为可能有多个重定向符号，每个重定向符号类型+word构成了链表节点
-    int        assigns_only;   // 没有 argv，仅赋值：A=1 B=2   → 影响环境处理
-    struct s_cmd *next;        // 管道里的下一个简单命令
-} t_simeple_cmd;
+    t_assign  *assigns; //a linked list
+    char     **cmd_argv; // first one will be cmd_name, the comes with arguments
+    t_redir   *redirs; // a linked list
+    t_cmd_type cmd_type;
+    int          is_builtin;
+    struct s_cmd *next;
+} t_simple_cmd;
 
 
 

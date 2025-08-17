@@ -1,8 +1,15 @@
 INPUT: t_simple_cmd
 
-- count how many nodes, namely, simple_cmds in the pipe linked list
-- create count-1 pipes
-- go through redirs linked list in t_simple_cmd
+executor 遍历链表，先数出有几个节点（假设是 n）。
+如果 n == 1，那就是一个普通命令（或赋值/重定向）。
+如果 n > 1，那就意味着这是一个 pipeline，需要：
+创建 n-1 个 pipe()
+给每个 simple_cmd 分配好 stdin/stdout 重定向：
+第一个命令：stdout → pipes[0][1]
+中间命令：stdin ← pipes[i-1][0], stdout → pipes[i][1]
+最后一个命令：stdin ← pipes[n-2][0]
+每个命令都要 fork 出一个子进程，dup2() 修改它们的标准输入输出，然后 execve() 执行。
+父进程要关掉多余的 fd，并 wait 所有子进程。
 
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Step 0: 形态判定                                                      │
@@ -122,45 +129,4 @@ stdin = pipefds[1][0] (reads from grep's output)
 stdout = default (terminal)
 ```
 
-```c
-
-int executor(t_list *simple_cmd_list)
-{
-    int count = count_nodes(simple_cmd_list);
-    t_list *node = simple_cmd_list;
-    for (int i = 0; i < count && node; i++, node = node->next)
-    {
-        cmd_var_status((t_simple_cmd *)node->content, count, i);
-    }
-    wait_all_children(); // pipeline 等待
-    return 0;
-}
-
-
-int cmd_var_status(t_simple_cmd *cmd)
-{
-    if (!cmd->assigns && !cmd->argv && !cmd->redirs)
-        return 0;
-
-    if (!cmd->argv)
-    {
-        if (cmd->redirs && (backup_fds(), apply_redirs_in_parent(cmd->redirs) < 0))
-            return restore_fds(), 1;
-        if (cmd->assigns)
-            apply_assigns_to_shell(cmd->assigns);
-        if (cmd->redirs)
-            restore_fds();
-        return 0;
-    }
-    if (cmd->argv)
-    {
-        if (!cmd->redirs)
-            fork_and_exec_with_assigns(cmd);
-        else
-            fork_and_exec_with_redirs_and_assigns(cmd);
-    }
-    return 0;
-}
-
-```
 
