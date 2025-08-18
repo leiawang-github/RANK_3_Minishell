@@ -33,3 +33,7 @@ void init_cmd(t_simple_cmd *simple_cmd)
 }
 
 
+parse_simple_cmd(&tokens, node)
+{
+    
+}
