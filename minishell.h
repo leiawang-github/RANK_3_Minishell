@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/17 21:10:59 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/08/21 21:55:36 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,17 +19,16 @@
 #include <ctype.h>
 #include <readline/readline.h>
 
-//token types: 6 types
+//lexer part
 typedef enum e_token_type {
     T_WORD,
 	T_PIPE,
 	T_REDIR_IN,
-	t_REDIR_OUT,
+	T_REDIR_OUT,
 	T_REDIR_APP,
 	T_HEREDOC
 } t_token_type;
 
-//qoutes types: no /single/ double, 3 types
 typedef enum e_quote_type {
     Q_NONE = 0,
     Q_SQUOTE = 1,
@@ -38,13 +37,11 @@ typedef enum e_quote_type {
 
 typedef struct s_token {
     t_token_type       type;
-    char           *lexeme;      // 原样存放（含引号）
-    int             has_squote;  // 可选：此词是否被单引号包裹（或包含单引号片段）
-    int             has_dquote;
+    t_quote_type   qoute_type;
+    char           *lexeme;
     struct s_token *next;
 } t_token;
 
-//cmd_assign ---------- 变量赋值 如：A=1 B="x y" ----------
 typedef struct s_assign {
     char *key;            // "A"
     char *val;            // "1"（去引号、已做变量展开后）
@@ -52,7 +49,6 @@ typedef struct s_assign {
     struct s_assign *next;
 } t_assign;
 
-//cmd_redir ---------- 重定向：<in  >out  >>app  <<heredoc ----------
 typedef enum e_redir_type{
     R_REDIR_IN,
     R_REDIR_OUT,
@@ -60,7 +56,6 @@ typedef enum e_redir_type{
     R_REDIR_HEREDOC
 } t_redir_type;
 
-//redir strcut
 typedef struct s_redir {
     t_redir_type redir_type;   // which kind of redirection
     char        *target; // file path or heredoc delimiter
@@ -72,24 +67,53 @@ typedef struct s_redir {
 typedef enum e_cmd_type {
     CMD_ASSIGN_ONLY,
     CMD_REDIR_ONLY,
-    CMD_ASSIGN_ADN_REDIR,
-    CMD_WITH_ARGV
+    CMD_ASSIGN_AND_REDIR,
+    CMD_WITH_ARGV,
+    CMD_EMPTY
 }   t_cmd_type;
+
+typedef struct s_var
+{
+    char            *key;
+    char            *value;
+    struct s_var    *next;
+}   t_var;
+
+typedef struct s_shell
+{
+    t_var   *vars;   // shell 自己的变量表（非环境）
+    char   **envp;   // 运行时环境变量表（传给 execve）
+}   t_shell;
 
 
 //cmd_node_format
-typedef struct s_simple_cmd {
+typedef struct s_cmd {
     t_assign  *assigns; //a linked list
     char     **cmd_argv; // first one will be cmd_name, the comes with arguments
     t_redir   *redirs; // a linked list
-    t_cmd_type cmd_type;
+    t_cmd_type type;
     int          is_builtin;
     struct s_cmd *next;
-} t_simple_cmd;
+} t_cmd;
 
 
+//executor functions
+int     backup_fds(int bak[2]);
+void    restore_fds(int bak[2]);
+int     apply_redirs_in_parent(t_redir *r);
+int     apply_redirs_in_child(t_redir *r);
+void    apply_assigns_to_shell(t_assign *a);
+void    apply_assigns_to_child_env(t_assign *a);
+int     is_builtin(const char *name);
+int     run_builtin(char **argv);
+void    execve_with_path(const char *file, char *const argv[], char *const envp[]);
+char  **get_envp(void);
+int     interpret_status(int st);
 
 
+int  exec_single(t_cmd *cmd);
+int  exec_pipeline(t_cmd *head);
+void child_exec_for_node(t_cmd *cmd);
 
 
 

@@ -1,13 +1,13 @@
 #include "minishell.h"
 
-t_simple_cmd *parse_tokens(t_list *tokens)
+t_cmd *parse_tokens(t_token *tokens)
 {
-    t_simple_cmd *head = NULL;
-    t_simple_cmd *tail = NULL;
+    t_cmd *head = NULL;
+    t_cmd *tail = NULL;
 
     while (tokens)
 	{
-        t_simple_cmd *node = malloc(sizeof(t_simple_cmd));
+        t_cmd *node = malloc(sizeof(t_cmd));
         if (!node)
             return NULL;
         init_cmd(node);
@@ -22,7 +22,7 @@ t_simple_cmd *parse_tokens(t_list *tokens)
 }
 
 
-void init_cmd(t_simple_cmd *simple_cmd)
+void init_cmd(t_cmd *simple_cmd)
 {
     simple_cmd->cmd_argv = NULL;
     simple_cmd->redirs = NULL;
@@ -33,7 +33,7 @@ void init_cmd(t_simple_cmd *simple_cmd)
 }
 
 
-parse_simple_cmd(&tokens, node)
-{
-    
-}
+// parse_simple_cmd(&tokens, node)
+// {
+
+// }

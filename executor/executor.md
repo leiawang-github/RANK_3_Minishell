@@ -1,9 +1,9 @@
-INPUT: t_simple_cmd
+INPUT: t_cmd *cmd；this is the returning value from parser
 
-executor 遍历链表，先数出有几个节点（假设是 n）。
-如果 n == 1，那就是一个普通命令（或赋值/重定向）。
-如果 n > 1，那就意味着这是一个 pipeline，需要：
-创建 n-1 个 pipe()
+based on how many nodes in simple cmd list, we ...
+
+
+
 给每个 simple_cmd 分配好 stdin/stdout 重定向：
 第一个命令：stdout → pipes[0][1]
 中间命令：stdin ← pipes[i-1][0], stdout → pipes[i][1]
@@ -28,7 +28,7 @@ executor 遍历链表，先数出有几个节点（假设是 n）。
       D) 含命令名 (argv[0] 非空) ──────────────────────────────────────────────►
 
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Step 1: 命令来源判定（先内建，后外部）                                   │
+│ Step 1: if more than one node（先内建，后外部）                                   │
 └───────────────┬──────────────────────────────────────────────────────┘
                 │
         is_builtin(argv[0]) ?
@@ -130,3 +130,55 @@ stdout = default (terminal)
 ```
 
 
+```bash
+┌──────────────────────────────────────────────────────────────────────┐
+│                    single cmd（no pipe：head->next == NULL）          │
+├──────────────────────────────────────────────────────────────────────┤
+│  process t_cmd (head)                                                           │
+│     │                                                                           │
+│     ├─ get cmd->type                                                            │
+│     │   │                                                                       │
+│     │   ├─ CMD_EMPTY ............→ return 0                                     │
+│     │   ├─ CMD_ASSIGN_ONLY ......→ parent process：apply_assigns_to_shell        │
+│     │   ├─ CMD_REDIR_ONLY .......→ parent process：backup→apply_redirs→restore   │
+│     │   ├─ CMD_ASSIGN_REDIR .....→ parent process：backup→redirs→assigns→restore │
+│     │   └─ CMD_WITH_ARGV                                                         │
+│     │        │                                                                   │
+│     │        ├─ is_builtin? → parent process：backup→redirs→(assigns)→run_builtin │
+│     │        │                     → restore → 返回内建退出码                       │
+│     │        └─ extra funs         → fork 子进程：redirs/assigns→execve               │
+│     │                              父进程 wait → interpret_status                   │
+└──────────────────────────────────────────────────────────────────────┘
+
+```
+```bash
+┌──────────────────────────────────────────────────────────────────────┐
+│                    多节点（有管道：head->next != NULL）               │
+├──────────────────────────────────────────────────────────────────────┤
+│  遍历链表 (for cur=head; cur; cur=cur->next)                         │
+│     │                                                                │
+│     ├─ 若不是最后一个节点 → pipe()                                    │
+│     ├─ fork()                                                        │
+│     │   │                                                            │
+│     │   ├─ 子进程：                                                   │
+│     │   │   ├─ 若有上游 prev_r → dup2(prev_r, STDIN)                 │
+│     │   │   ├─ 若有下游 pipefd[1] → dup2(pipefd[1], STDOUT)          │
+│     │   │   ├─ 关闭多余 pipe 端                                      │
+│     │   │   ├─ apply_redirs_in_child(cur->redirs)                    │
+│     │   │   └─ 根据 cmd->type 执行：                                 │
+│     │   │        • CMD_EMPTY ............→ _exit(0)                  │
+│     │   │        • CMD_ASSIGN_ONLY ......→ apply_assigns_to_child_env→_exit(0)
+│     │   │        • CMD_REDIR_ONLY .......→ _exit(0)                  │
+│     │   │        • CMD_ASSIGN_REDIR .....→ apply_assigns_to_child_env→_exit(0)
+│     │   │        • CMD_WITH_ARGV                                   │
+│     │   │             · 内建 → _exit(run_builtin)                   │
+│     │   │             · 外部 → execve_with_path / 失败→_exit(127)   │
+│     │   │                                                            │
+│     │   └─ 父进程：                                                  │
+│     │       ├─ 关闭上轮读端 prev_r                                   │
+│     │       ├─ 关闭本轮写端 pipefd[1]                                │
+│     │       └─ 把 pipefd[0] 保存为下一轮的 prev_r                    │
+│     │                                                                │
+│  循环结束：关闭残余 prev_r → wait 所有子进程 → 返回“最后一个”的退出码  │
+└──────────────────────────────────────────────────────────────────────┘
+```
