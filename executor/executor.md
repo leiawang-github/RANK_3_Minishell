@@ -1,78 +1,83 @@
-INPUT: t_cmd *cmd；this is the returning value from parser
+```rust
 
-based on how many nodes in simple cmd list, we ...
+readline → LEXER → PARSER
+                    │
+                    ▼
+               head = t_cmd*        // parser 返回的 simple_cmd 链表头
+                    │
+                    ▼
+         ┌──────────────────────────────┐
+         │ 头结点是否唯一？(head->next) │
+         └───────────┬──────────────────┘
+                     │
+        YES (单命令) │                 NO (pipeline，多命令)
+                     │                                  │
+                     ▼                                  ▼
+      ┌───────────────────────────┐        ┌──────────────────────────────────┐
+      │ Single Command Path       │        │ Pipeline Path                    │
+      └──────────────┬────────────┘        └──────────────────┬──────────────┘
+                     │                                        │
+             is_builtin(argv[0]) ?                            │
+           ┌──────────────┴────────────────────────           │
+           │ YES: execute buildin in parent process│          │
+           │ if (apply_redirs_in_parent()<0)       │          │
+             {                                     │          │
+                restore_fds(); return 1;           │          │
+             }                                     │          │
+           │  rc = run_builtin(cmd_argv);          │          │
+           │  return rc                            │          │
+           └───────────────────────────────────────┘          │
+                     │                                        │
+                     ▼                                        │
+           NO: 外部程序（fork+execve）                          │
+              pid = fork()                                    │
+                if (pid == 0) {                               │
+                    // Child:                                 │
+                    //   1) 应用 redirs（在子进程）             │
+                    //   2) execve(path, argv, envp)         │
+                    //                                       │
+                  } else {                                   │
+                    // Parent: waitpid & collect status      │
+                    return wait_and_collect()                │
+                  }                                          │
+                                                             ▼
+                                             [预处理/按需建立管道：边走边建]
+                                             prev_read = -1
+                                             pids = []
+                                             for (cmd = head; cmd; cmd = cmd->next):
+                                                 // 若后继存在，建立“当前→下一个”的管道
+                                                 if (cmd->next) pipe(cur_pipe) else cur_pipe={-1,-1}
 
+                                                 pid = fork()
+                                                 if (pid == 0) {              // ── 子进程 ──
+                                                     // 1) 连接管道端
+                                                     if (prev_read != -1) dup2(prev_read, STDIN)
+                                                     if (cur_pipe[1] != -1) dup2(cur_pipe[1], STDOUT)
+                                                     close_all_unused_fds(prev_read, cur_pipe)
 
+                                                     // 2) 应用重定向（按出现顺序，覆盖前述 dup2）
+                                                     if (apply_redirs_in_child(cmd->redirs) < 0) _exit(1)
 
-给每个 simple_cmd 分配好 stdin/stdout 重定向：
-第一个命令：stdout → pipes[0][1]
-中间命令：stdin ← pipes[i-1][0], stdout → pipes[i][1]
-最后一个命令：stdin ← pipes[n-2][0]
-每个命令都要 fork 出一个子进程，dup2() 修改它们的标准输入输出，然后 execve() 执行。
-父进程要关掉多余的 fd，并 wait 所有子进程。
+                                                     // 3) 执行
+                                                     if (is_builtin(cmd->argv[0]))
+                                                         _exit(run_builtin(cmd->argv))
+                                                     path = resolve_path(cmd->argv[0])   // 含 / 或 PATH 搜索
+                                                     if (!path) _exit(127)
+                                                     execve(path, cmd->argv, build_envp())
+                                                     _exit((errno==ENOENT)?127:126)
+                                                 }
+                                                 // ── 父进程 ──
+                                                 record_pid(pids, pid)
+                                                 if (prev_read != -1) close(prev_read)     // 上一轮读端已交付
+                                                 if (cur_pipe[1] != -1) close(cur_pipe[1]) // 立刻关写端，防阻塞
+                                                 prev_read = (cur_pipe[0] != -1) ? cur_pipe[0] : -1
 
-┌──────────────────────────────────────────────────────────────────────┐
-│ Step 0: 形态判定                                                      │
-└───────────────┬──────────────────────────────────────────────────────┘
-                │
-      A) 仅赋值? (argv==NULL && redirs empty) ──► apply_assigns_to_shell() → return 0
-                │
-      B) 仅重定向? (argv==NULL && redirs !empty)
-          backup_fds(); if (apply_redirs_in_parent()<0){restore_fds();return 1;}
-          restore_fds(); return 0
-                │
-      C) 赋值+重定向(无命令名)?
-          backup_fds(); if (apply_redirs_in_parent()<0){restore_fds();return 1;}
-          apply_assigns_to_shell(); restore_fds(); return 0
-                │
-      D) 含命令名 (argv[0] 非空) ──────────────────────────────────────────────►
+                                             // 循环结束
+                                             if (prev_read != -1) close(prev_read)
+                                             wait_all(pids) → 以“最后一个命令”的退出码更新 $?
+                                             return last_status
 
-┌──────────────────────────────────────────────────────────────────────┐
-│ Step 1: if more than one node（先内建，后外部）                                   │
-└───────────────┬──────────────────────────────────────────────────────┘
-                │
-        is_builtin(argv[0]) ?
-      ┌───────────────┴────────────────┐
-      │ YES: BUILTIN                   │  NO: EXTERNAL
-      ▼                                ▼
- backup_fds()
- if (apply_redirs_in_parent()<0){      ┌───────────────────────────────────────┐
-   restore_fds(); return 1;            │ Step 2: 外部程序路径确定               │
- }                                     └───────────────┬───────────────────────┘
- env_snapshot s = env_save();                          │
- env_apply_assigns_temporarily(assigns);   contains_slash(argv[0]) ?
- int rc = run_builtin(argv);                      ┌───────────────┴─────────────┐
- env_restore(s);                                  │ YES: 给定路径               │
- restore_fds();                                   │   path = argv[0]            │
- return rc                                        │                             │
-                                                  │ NO: PATH 搜索               │
-                                                  │   PATH = getenv("PATH")     │
-                                                  │   若为空/缺失 → print "cmd  │
-                                                  │   not found" ; return 127   │
-                                                  │   dirs = split(PATH, ':')   │
-                                                  │   空项→当前目录 "."         │
-                                                  │   逐目录拼接 dir+"/"+name   │
-                                                  │   access(X_OK)==0 → 命中    │
-                                                  │   全未命中 → 127            │
-                                                  └───────────────┬─────────────┘
-                                                                  │ path 就绪
-                                                                  ▼
-                                           ┌────────────────────────────────────┐
-                                           │ Step 3: 外部程序执行               │
-                                           └─────────────────┬──────────────────┘
-                                                             │
-                                                      pid = fork()
-                                                      if (pid==0) {           // 子进程
-                                                         if (apply_redirs_in_child()<0) _exit(1);
-                                                         char **envp = build_env_with_assigns(assigns);
-                                                         // 可选加分: stat 判断目录/ENOEXEC 兜底
-                                                         execve(path, argv, envp);
-                                                         // 只有失败才会到达这里
-                                                         // errno==ENOEXEC 可尝试 execl("/bin/sh","sh",path,NULL)
-                                                         _exit( (errno==ENOENT)?127:126 );
-                                                      }
-                                                      // 父进程
-                                                      return wait_and_collect(pid)
+```
 
 Just an example：
 
@@ -130,55 +135,56 @@ stdout = default (terminal)
 ```
 
 
-```bash
-┌──────────────────────────────────────────────────────────────────────┐
-│                    single cmd（no pipe：head->next == NULL）          │
-├──────────────────────────────────────────────────────────────────────┤
-│  process t_cmd (head)                                                           │
-│     │                                                                           │
-│     ├─ get cmd->type                                                            │
-│     │   │                                                                       │
-│     │   ├─ CMD_EMPTY ............→ return 0                                     │
-│     │   ├─ CMD_ASSIGN_ONLY ......→ parent process：apply_assigns_to_shell        │
-│     │   ├─ CMD_REDIR_ONLY .......→ parent process：backup→apply_redirs→restore   │
-│     │   ├─ CMD_ASSIGN_REDIR .....→ parent process：backup→redirs→assigns→restore │
-│     │   └─ CMD_WITH_ARGV                                                         │
-│     │        │                                                                   │
-│     │        ├─ is_builtin? → parent process：backup→redirs→(assigns)→run_builtin │
-│     │        │                     → restore → 返回内建退出码                       │
-│     │        └─ extra funs         → fork 子进程：redirs/assigns→execve               │
-│     │                              父进程 wait → interpret_status                   │
-└──────────────────────────────────────────────────────────────────────┘
+```rust
+altervative:
+┌─────────────────────────────────────────────┐
+│ Pipeline Path (n > 1)                       │
+└──────────────────┬──────────────────────────┘
+                   │
+          for i = 0..n-1 over simple_cmd:
+                ┌───────────────────────────────────────────────┐
+                │ Step 1: 解析命令来源                           │
+                └───────────────────┬───────────────────────────┘
+                                    │
+                      ┌─────────────┴───────────────┐
+                      │ (含内建) 也在子进程中执行    │
+                      │ （保持与其他命令一致）       │
+                      └──────────────────────────────┘
+                ┌───────────────────────────────────────────────┐
+                │ Step 2: 外部程序路径确定（仅外部命令需要）     │
+                └───────────────────┬───────────────────────────┘
+                                    │
+                    contains_slash(argv[0]) ?
+                        YES → path = argv[0]
+                        NO  → PATH 搜索（未命中→127）
+                ┌───────────────────────────────────────────────┐
+                │ Step 3: fork 子进程                           │
+                └───────────────────┬───────────────────────────┘
+                                    │
+                               if (pid == 0) {
+                                   // Child:
+                                   //  a) 连接 pipeline 的 fd：
+                                   //     i==0       → dup2(pipes[0].write, STDOUT)
+                                   //     0<i<n-1    → dup2(pipes[i-1].read, STDIN);
+                                   //                   dup2(pipes[i].write, STDOUT)
+                                   //     i==n-1     → dup2(pipes[n-2].read, STDIN)
+                                   //     并关闭所有无关 fd，避免阻塞
+                                   //
+                                   //  b) 应用 redirs（在子进程）
+                                   //
+                                   //  c) 执行：
+                                   //     - 内建 → run_builtin(argv) 然后 _exit(return_code)
+                                   //     - 外部 → execve(path, argv, envp)
+                                   //             失败 → _exit(126/127)
+                               } else {
+                                   // Parent:
+                                   //  - 记录 pid[i]
+                                   //  - 关闭已无用的 pipe 端
+                                   //  - 继续启动下一个命令
+                               }
+          // after loop:
+          // 关闭父进程中仍未关闭的所有 pipe 端
+          // waitpid(pid[0..n-1]) 并以“最后一个命令”的返回码作为 pipeline 返回值（与 bash 一致）
 
-```
-```bash
-┌──────────────────────────────────────────────────────────────────────┐
-│                    多节点（有管道：head->next != NULL）               │
-├──────────────────────────────────────────────────────────────────────┤
-│  遍历链表 (for cur=head; cur; cur=cur->next)                         │
-│     │                                                                │
-│     ├─ 若不是最后一个节点 → pipe()                                    │
-│     ├─ fork()                                                        │
-│     │   │                                                            │
-│     │   ├─ 子进程：                                                   │
-│     │   │   ├─ 若有上游 prev_r → dup2(prev_r, STDIN)                 │
-│     │   │   ├─ 若有下游 pipefd[1] → dup2(pipefd[1], STDOUT)          │
-│     │   │   ├─ 关闭多余 pipe 端                                      │
-│     │   │   ├─ apply_redirs_in_child(cur->redirs)                    │
-│     │   │   └─ 根据 cmd->type 执行：                                 │
-│     │   │        • CMD_EMPTY ............→ _exit(0)                  │
-│     │   │        • CMD_ASSIGN_ONLY ......→ apply_assigns_to_child_env→_exit(0)
-│     │   │        • CMD_REDIR_ONLY .......→ _exit(0)                  │
-│     │   │        • CMD_ASSIGN_REDIR .....→ apply_assigns_to_child_env→_exit(0)
-│     │   │        • CMD_WITH_ARGV                                   │
-│     │   │             · 内建 → _exit(run_builtin)                   │
-│     │   │             · 外部 → execve_with_path / 失败→_exit(127)   │
-│     │   │                                                            │
-│     │   └─ 父进程：                                                  │
-│     │       ├─ 关闭上轮读端 prev_r                                   │
-│     │       ├─ 关闭本轮写端 pipefd[1]                                │
-│     │       └─ 把 pipefd[0] 保存为下一轮的 prev_r                    │
-│     │                                                                │
-│  循环结束：关闭残余 prev_r → wait 所有子进程 → 返回“最后一个”的退出码  │
-└──────────────────────────────────────────────────────────────────────┘
-```
+
+

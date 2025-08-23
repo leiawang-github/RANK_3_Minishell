@@ -1,34 +1,19 @@
 #include "minishell.h"
 
-// count how many nodes in the list
-
-// int count_cmds(t_cmd *head)
-// {
-//     int count = 0;
-//     t_cmd *cur = head;
-
-//     while (cur)
-//     {
-//         count++;
-//         cur = cur->next;
-//     }
-//     return (count);
-// }
-
 int	executor(t_cmd *head)
 {
 	if (!head)
 		return (0);
 	if (head->next == NULL)
 	{
-		return (exec_single(head));
+		exec_single_cmd(head);
 	}
 	else
 	{
-		return (exec_pipeline(head));
+		exec_pipeline(head); // for (cmd = head; cmd != NULL; cmd = cmd->next) {
+			// 一律 fork（内建也在子进程跑）
 	}
 }
-
 
 
 

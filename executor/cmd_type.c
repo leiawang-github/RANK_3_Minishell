@@ -7,7 +7,7 @@ static int  has_argv(const t_cmd *cmd)
 
 static int  has_assigns(const t_cmd *cmd)
 {
-	return (cmd->assigns != NULL);
+	return (cmd->assign != NULL);
 }
 static int  has_redirs(const t_cmd *cmd)
 {

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/22 16:12:32 by leia             ###   ########.fr       */
+/*   Updated: 2025/08/23 22:42:32 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,28 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <readline/readline.h>
+
+
+//-------------------------------what I need possibly from parser-----------------------
+//pipeline_list
+typedef struct s_cmd {
+    char     **cmd_argv; // first one will be cmd_name, the comes with arguments
+    t_redir   *redirs; // a linked list, see below
+    struct s_cmd *next;
+} t_cmd;
+
+
+typedef struct s_redir {
+    t_redir_type redir_type;   // which kind of redirection
+    char        *target; // file path or heredoc delimiter
+    int          do_expand; // only for heredoc
+    struct s_redir *next;   // pointer for linking multiple redirs
+}   t_redir;
+//---------------------------------------------------------------------------------------
+
+
+
+
 
 //lexer part
 typedef enum e_token_type {
@@ -86,17 +108,6 @@ typedef struct s_shell
 }   t_shell;
 
 
-//cmd_node_format
-typedef struct s_cmd {
-    t_assign  *assigns; //a linked list
-    char     **cmd_argv; // first one will be cmd_name, the comes with arguments
-    t_redir   *redirs; // a linked list
-    t_cmd_type type;
-    int          is_builtin;
-    struct s_cmd *next;
-} t_cmd;
-
-
 //executor functions
 int     backup_fds(int bak[2]);
 void    restore_fds(int bak[2]);
@@ -114,6 +125,8 @@ int     interpret_status(int st);
 int  exec_single(t_cmd *cmd);
 int  exec_pipeline(t_cmd *head);
 void child_exec_for_node(t_cmd *cmd);
+
+int exec_single_cmd(head);
 
 
 
