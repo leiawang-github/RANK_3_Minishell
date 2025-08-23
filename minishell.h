@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/21 21:55:36 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/08/22 16:12:32 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,16 +72,16 @@ typedef enum e_cmd_type {
     CMD_EMPTY
 }   t_cmd_type;
 
-typedef struct s_var
+typedef struct s_assign
 {
     char            *key;
     char            *value;
-    struct s_var    *next;
-}   t_var;
+    struct s_assign    *next;
+}   t_assign;
 
 typedef struct s_shell
 {
-    t_var   *vars;   // shell 自己的变量表（非环境）
+    t_assign   *vars;   // shell 自己的变量表（非环境）
     char   **envp;   // 运行时环境变量表（传给 execve）
 }   t_shell;
 
