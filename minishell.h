@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/28 14:50:00 by leia             ###   ########.fr       */
+/*   Updated: 2025/08/28 21:47:39 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <readline/readline.h>
 
 
@@ -44,9 +45,15 @@ typedef struct s_redir {
     struct s_redir *next;   // pointer for linking multiple redirs
 }   t_redir;
 
+typedef enum e_redir_type{
+    R_REDIR_IN,
+    R_REDIR_OUT,
+    R_REDIR_APPEND,
+    R_REDIR_HEREDOC
+} t_redir_type;
 
 
-
+int g_last_status;
 
 
 //---------------------------------------------------------------------------------------
@@ -85,12 +92,6 @@ typedef struct s_assign {
     struct s_assign *next;
 } t_assign;
 
-typedef enum e_redir_type{
-    R_REDIR_IN,
-    R_REDIR_OUT,
-    R_REDIR_APPEND,
-    R_REDIR_HEREDOC
-} t_redir_type;
 
 
 //

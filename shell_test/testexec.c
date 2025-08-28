@@ -31,34 +31,45 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int main(void) {
-    // 1. 正常输出到屏幕
-    printf("step 1: hello, terminal!\n");
+// int main(void) {
+//     // 1. 正常输出到屏幕
+//     printf("step 1: hello, terminal!\n");
 
-    // 2. 备份 stdout (fd = 1)
-    int backup = dup(STDOUT_FILENO);
+//     // 2. 备份 stdout (fd = 1)
+//     int backup = dup(STDOUT_FILENO);
 
-    // 3. 打开文件 out.txt
-    int fd = open("out.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd < 0) {
-        perror("open");
-        return 1;
-    }
+//     // 3. 打开文件 out.txt
+//     int fd = open("out.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+//     if (fd < 0) {
+//         perror("open");
+//         return 1;
+//     }
 
-    // 4. 把 stdout 重定向到文件
-    dup2(fd, STDOUT_FILENO);
-    close(fd);
+//     // 4. 把 stdout 重定向到文件
+//     dup2(fd, STDOUT_FILENO);
+//     close(fd);
 
-    // 5. 现在 printf 不再输出到屏幕，而是写入 out.txt
-    printf("step 2: hello, file!\n");
-    fflush(stdout);
+//     // 5. 现在 printf 不再输出到屏幕，而是写入 out.txt
+//     printf("step 2: hello, file!\n");
+//     fflush(stdout);
 
-    // 6. 恢复 stdout
-    dup2(backup, STDOUT_FILENO);
-    close(backup);
+//     // 6. 恢复 stdout
+//     dup2(backup, STDOUT_FILENO);
+//     close(backup);
 
-    // 7. 又回到屏幕
-    printf("step 3: back to terminal!\n");
+//     // 7. 又回到屏幕
+//     printf("step 3: back to terminal!\n");
 
-    return 0;
+//     return 0;
+// }
+
+int main()
+{
+    int fd = open("test.md", O_RDONLY);
+    if(fd < 0)
+        perror();
+
+
+
+
 }

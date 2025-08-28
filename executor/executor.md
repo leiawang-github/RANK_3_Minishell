@@ -209,3 +209,18 @@ SingleCommandBuiltin(head):
        - dup2(saved_*, STD*)，并关闭副本
     6) 返回 rc（写入 $?）
 
+
+
+在你的 executor 里：
+
+外部命令：在 waitpid() 后，根据 WEXITSTATUS(status) 更新。
+
+内建命令：run_builtin() 的返回值，直接写入。
+
+redirection 失败：g_last_status = 1。
+
+command not found：g_last_status = 127。
+
+不可执行文件：g_last_status = 126。
+
+信号终止：g_last_status = 128 + signum（与 bash 对齐）。

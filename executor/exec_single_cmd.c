@@ -29,7 +29,7 @@
 int exec_single_cmd(t_cmd *head)
 {
 	if(!head || !head->cmd_argv || !head->cmd_argv[0])
-		return 0; 
+		return 0;
 	if (is_builtin(head->cmd_argv[0]))
 	{
 		backup_fds();
@@ -59,7 +59,7 @@ int exec_single_cmd(t_cmd *head)
 
 int is_builtin(const char *name)
 {
-    if (!name) 
+    if (!name)
 		return 0;
     return (ft_strcmp(name, "echo")  == 0) ||
            (ft_strcmp(name, "cd")    == 0) ||
@@ -80,17 +80,7 @@ int backup_fds()
 	saved_stdout = dup(STDOUT_FILENO);
 	saved_stderr = dup(STDERR_FILENO);
 	return 0;
-	
 }
-
-
-typedef enum e_redir_type{
-    R_REDIR_IN,
-    R_REDIR_OUT,
-    R_REDIR_APPEND,
-    R_REDIR_HEREDOC
-} t_redir_type;
-
 
 int apply_redirs_in_parent(t_cmd *head->redirs) //在父进程应用重定向
 {
@@ -98,22 +88,27 @@ int apply_redirs_in_parent(t_cmd *head->redirs) //在父进程应用重定向
 	while (curr)
 	{
 		int fd;
-		if (curr->redir_type == R_REDIR_IN) // <
+		if (curr->redir_type == R_REDIR_IN) // < 语义：把文件内容作为命令的标准输入。
 		{
 			fd = open(curr->target, O_RDONLY);
 			if (fd < 0)
 			{
-				perror("open error");
+				ft_perror(curr->target);
 				return (-1);
 			}
 			if (dup2(fd, STDIN_FILENO) < 0)
 			{
-				perror("dup2 error");
+				ft_perror(curr->target);
 				close(fd);
 				return (-1);
 			}
 			close(fd);
 		}
+
+
+
+
+		
 		else if (curr->redir_type == R_REDIR_OUT) // >
 		{
 			fd = open(curr->target, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -172,12 +167,12 @@ int apply_redirs_in_parent(t_cmd *head->redirs) //在父进程应用重定向
 					{
 						free(line);
 						break;
-					}	
+					}
 					if (curr->do_expand)
 						line = expand_variables(line); // 变量展开函数
 					write(pipefd[1], line, ft_strlen(line));
 					write(pipefd[1], "\n", 1);
-					free(line);	
+					free(line);
 				}
 		}
 }
