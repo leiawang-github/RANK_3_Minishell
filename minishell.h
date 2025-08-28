@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/23 22:42:32 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/08/28 14:50:00 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <readline/readline.h>
 
 
@@ -35,6 +36,19 @@ typedef struct s_redir {
     int          do_expand; // only for heredoc
     struct s_redir *next;   // pointer for linking multiple redirs
 }   t_redir;
+
+typedef struct s_redir {
+    t_redir_type redir_type;   // which kind of redirection
+    char        *target; // file path or heredoc delimiter
+    int          do_expand; // only for heredoc
+    struct s_redir *next;   // pointer for linking multiple redirs
+}   t_redir;
+
+
+
+
+
+
 //---------------------------------------------------------------------------------------
 
 
@@ -78,12 +92,6 @@ typedef enum e_redir_type{
     R_REDIR_HEREDOC
 } t_redir_type;
 
-typedef struct s_redir {
-    t_redir_type redir_type;   // which kind of redirection
-    char        *target; // file path or heredoc delimiter
-    int          do_expand; // only for heredoc
-    struct s_redir *next;   // pointer for linking multiple redirs
-}   t_redir;
 
 //
 typedef enum e_cmd_type {

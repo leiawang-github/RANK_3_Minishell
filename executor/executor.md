@@ -188,3 +188,24 @@ altervative:
 
 
 
+SingleCommandBuiltin(head):
+    1) 语义校验
+       - argv[0] 必须存在；若缺失 → 语法错误（不进入本流程）
+       - 内建名属于 {echo, cd, pwd, export, unset, env, exit}
+    2) 备份标准 IO
+       - saved_stdin  = dup(STDIN)
+       - saved_stdout = dup(STDOUT)
+       - saved_stderr = dup(STDERR)
+    3) 应用重定向（父进程）
+       - 依出现顺序处理 redirs：
+         <, >, >>, <<（heredoc）
+       - 任一 open/dup2 失败 → 打印错误，恢复 fd，返回 1
+    4) 执行内建
+       - rc = run_builtin(argv)
+       - 特例：exit
+         * 若 exit 无法解析参数或溢出 → 按题意打印错误并返回相应码（不退出 shell）
+         * 否则在外层据 rc 处理收尾退出（见下“退出策略”）
+    5) 恢复标准 IO
+       - dup2(saved_*, STD*)，并关闭副本
+    6) 返回 rc（写入 $?）
+

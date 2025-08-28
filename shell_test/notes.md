@@ -171,3 +171,58 @@ step3: echo hi 剩余部分先做展开;
 展开后：
 - 第一个字段 → 命令名
 - 其他字段 → 命令参数
+
+
+1. echo: 用来在终端输出一段文字或变量的值。
+- echo -n 不换行输出
+```bash
+echo -n "hello"
+echo " world
+```
+output： hello world
+
+- echo -e :让转义符号生效
+```bash
+echo -e "hello\nworld"
+```
+output: hello
+        world
+
+- echo $ 表示要把变量名展开：输出值
+```bash
+VAR=123
+echo $VAR
+```
+output：123
+
+
+常见的可以展开的变量：  
+- $HOME → 用户主目录路径
+- $PATH → 系统搜索命令的路径列表
+- $USER → 当前用户名
+- $$ → 当前 shell 的进程号
+- $? → 上一个命令的返回值 (0 表示成功)
+- $# → 传入脚本的参数个数
+- $@ → 脚本所有参数
+
+dup/dup2
+
+1. 背景知识
+
+在 Linux/Unix 系统里，一切皆文件。
+
+标准输入：stdin → 文件描述符 0
+
+标准输出：stdout → 文件描述符 1
+
+标准错误：stderr → 文件描述符 2
+
+比如我们写：
+```c
+write(1, "hello\n", 6);
+``` 
+实际上就是往标准输出（FD=1）写。
+而 dup/dup2 的作用就是：
+👉 把一个已存在的文件描述符复制成另一个文件描述符。
+复制后，两个 FD 指向同一个底层文件（共享文件偏移量、文件状态）。
+
