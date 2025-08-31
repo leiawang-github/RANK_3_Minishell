@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/26 21:11:44 by leiwang           #+#    #+#             */
-/*   Updated: 2025/08/28 21:47:39 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/08/29 17:05:58 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 //-------------------------------what I need possibly from parser-----------------------
 //pipeline_list
 typedef struct s_cmd {
-    char     **cmd_argv; // first one will be cmd_name, the comes with arguments
+    char     **argv; // first one will be cmd_name, the comes with arguments
     t_redir   *redirs; // a linked list, see below
     struct s_cmd *next;
 } t_cmd;

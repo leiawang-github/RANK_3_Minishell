@@ -1,16 +1,28 @@
-#include "minishell.h"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   executor.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
+/*   Updated: 2025/08/31 15:33:16 by leia             ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-int	executor(t_cmd *head)
+#include "executor.h"
+
+int	executor(t_cmd *pipeline)
 {
-	if (!head)
+	if (!pipeline)
 		return (0);
-	if (head->next == NULL)
+	if (pipeline->next == NULL)
 	{
-		exec_single_cmd(head);
+		exec_single_cmd(pipeline);
 	}
 	else
 	{
-		exec_pipeline(head); // for (cmd = head; cmd != NULL; cmd = cmd->next) {
+		exec_pipeline(pipeline); // for (cmd = head; cmd != NULL; cmd = cmd->next) {
 			// 一律 fork（内建也在子进程跑）
 	}
 }
