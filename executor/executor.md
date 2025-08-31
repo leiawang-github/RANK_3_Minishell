@@ -3,14 +3,14 @@
 readline → LEXER → PARSER
                     │
                     ▼
-               head = t_cmd*        // parser 返回的 simple_cmd 链表头
+               head = t_cmd *        // parser 返回的 simple_cmd 链表头
                     │
                     ▼
          ┌──────────────────────────────┐
-         │ 头结点是否唯一？(head->next) │
+         │ one node only？(head->next)   │
          └───────────┬──────────────────┘
                      │
-        YES (单命令) │                 NO (pipeline，多命令)
+        YES (单命令)  │                 NO (pipeline，多命令)
                      │                                  │
                      ▼                                  ▼
       ┌───────────────────────────┐        ┌──────────────────────────────────┐

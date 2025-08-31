@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:24 by leia              #+#    #+#             */
-/*   Updated: 2025/08/31 15:31:55 by leia             ###   ########.fr       */
+/*   Updated: 2025/08/31 20:20:37 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,14 +36,14 @@
 //         ▼
 //    return rc   // 写入 $?
 
-int exec_single(t_cmd *cmd)
+int exec_single(t_cmd *pipeline)
 {
-    if (!cmd->argv || !cmd->argv[0]) //no command, only redirections
+    if (!pipeline->argv || !pipeline->argv[0]) //no command, only redirections
 	{
-        if (cmd->redirs)
+        if (pipeline->redirs)
 		{
 			backup_fds();
-            if (apply_redirs_in_parent(cmd->redirs) < 0) 
+            if (apply_redirs_in_parent(pipeline->redirs) < 0) 
 			{ 
 				restore_fds();
 				return 1; 
@@ -52,30 +52,30 @@ int exec_single(t_cmd *cmd)
         }
         return 0;
     }
-    if (is_builtin(cmd->argv[0])) //with builtin command and maybe redirections
+    if (is_builtin(pipeline->argv[0])) //with builtin command and maybe redirections
 	{
-        if (cmd->redirs) 
+        if (pipeline->redirs) 
 		{
 			backup_fds();
-            if (apply_redirs_in_parent(cmd->redirs) < 0) 
+            if (apply_redirs_in_parent(pipeline->redirs) < 0) 
 			{ 
 				restore_fds();
 				return 1; 
 			}
-            int rc = run_builtin(cmd->argv);
+            int rc = run_builtin(pipeline->argv);
             restore_fds();
             return rc;
         } else {
-            return run_builtin(cmd->argv);
+            return run_builtin(pipeline->argv);
         }
     }
     pid_t pid = fork();
     if (pid < 0) return 1;
     if (pid == 0) {
-        if (apply_redirs_in_child(cmd->redirs) < 0) _exit(1);
-        char *path = resolve_command(cmd->argv[0], environ);
+        if (apply_redirs_in_child(pipeline->redirs) < 0) _exit(1);
+        char *path = resolve_command(pipeline->argv[0], environ);
         if (!path) _exit(127);            // command not found
-        execve(path, cmd->argv, environ);
+        execve(path, pipeline->argv, environ);
         _exit(errno == ENOENT ? 127 : 126);
     }
     int st; waitpid(pid, &st, 0);
@@ -123,9 +123,9 @@ int restore_fds()
 	return 0;
 }
 
-int  apply_redirs_in_parent(t_cmd *cmd->redirs) //在父进程应用重定向
+int  apply_redirs_in_parent(t_cmd *pipeline->redirs) //在父进程应用重定向
 {
-	t_redir *curr = cmd->redirs;
+	t_redir *curr = pipeline->redirs;
 
 	while (curr)
 	{
