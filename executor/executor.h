@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/08/31 20:19:05 by leia             ###   ########.fr       */
+/*   Updated: 2025/08/31 21:30:53 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,16 @@ int g_last_status;
 
 int exec_single_cmd(pipeline);
 int exec_pipeline(pipeline);
+
+int  apply_redirs_in_parent(t_cmd *pipeline);
+int is_builtin(const char *name);
+
+int apply_redir_in(const char *path);
+int apply_redir_out(const char *path);
+int apply_redir_append(const char *path);
+int apply_redir_heredoc(t_redir *redir);
+
+int prepare_heredocs(t_cmd *pipeline);
 
 
 #endif

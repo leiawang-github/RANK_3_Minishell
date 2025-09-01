@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:24 by leia              #+#    #+#             */
-/*   Updated: 2025/08/31 20:20:37 by leia             ###   ########.fr       */
+/*   Updated: 2025/08/31 22:06:09 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,7 @@ int is_builtin(const char *name)
            (ft_strcmp(name, "exit")  == 0);
 }
 
-int backup_fds()
+static int backup_fds()
 {
 	int saved_stdin;
 	int saved_stdout;
@@ -108,7 +108,7 @@ int backup_fds()
 	return 0;
 }
 
-int restore_fds()
+static int restore_fds()
 {
 	int saved_stdin;
 	int saved_stdout;
@@ -123,7 +123,7 @@ int restore_fds()
 	return 0;
 }
 
-int  apply_redirs_in_parent(t_cmd *pipeline->redirs) //在父进程应用重定向
+int  apply_redirs_in_parent(t_cmd *pipeline) //在父进程应用重定向
 {
 	t_redir *curr = pipeline->redirs;
 
@@ -151,8 +151,9 @@ int  apply_redirs_in_parent(t_cmd *pipeline->redirs) //在父进程应用重定�
 				return (-1);
 		}
 	}
+	curr = curr->next;
+	return (0);
 }
-
 
 	
 
