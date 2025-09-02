@@ -1,31 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor.c                                         :+:      :+:    :+:   */
+/*   handle_redirs.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/02 13:50:27 by leia             ###   ########.fr       */
+/*   Created: 2025/09/01 23:44:21 by leia              #+#    #+#             */
+/*   Updated: 2025/09/02 13:50:46 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "executor.h"
 
 
-
-
-void execute_command(t_cmd *cmd) {
-    // 先处理重定向
-    if (has_redirects(cmd)) {
-        handle_redirects(cmd);
+int has_redir(t_cmd *cmd) 
+{
+    t_cmd *current = cmd;
+    
+    while (current) {
+        if (current->redirs != NULL) {
+            return 1;
+        }
+        current = current->next;
     }
     
-    // 再执行命令
-    if (cmd->cmd_type == CMD_BUILTIN) {
-        execute_builtin(cmd);
-    }
-    else if (cmd->content == CMD_EXTERNAL) {
-        execute_external(cmd);
-    }
+    return 0;
+}
+
+void handle_redirects(t_cmd *cmd) {
+    // 不管什么命令类型，重定向处理逻辑是一样的
+    setup_redirects(cmd);
+    apply_redirects(cmd);
 }

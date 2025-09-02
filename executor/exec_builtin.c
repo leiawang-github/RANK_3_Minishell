@@ -1,31 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor.c                                         :+:      :+:    :+:   */
+/*   exec_builtin.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/02 13:50:27 by leia             ###   ########.fr       */
+/*   Created: 2025/09/01 17:35:23 by leia              #+#    #+#             */
+/*   Updated: 2025/09/01 17:35:24 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
-
-
-
-
-void execute_command(t_cmd *cmd) {
-    // 先处理重定向
-    if (has_redirects(cmd)) {
-        handle_redirects(cmd);
-    }
-    
-    // 再执行命令
-    if (cmd->cmd_type == CMD_BUILTIN) {
-        execute_builtin(cmd);
-    }
-    else if (cmd->content == CMD_EXTERNAL) {
-        execute_external(cmd);
-    }
-}

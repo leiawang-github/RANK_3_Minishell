@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:24 by leia              #+#    #+#             */
-/*   Updated: 2025/08/31 22:06:09 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/01 17:33:13 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,18 +83,6 @@ int exec_single(t_cmd *pipeline)
 }
 
 
-int is_builtin(const char *name)
-{
-    if (!name)
-		return 0;
-    return (ft_strcmp(name, "echo")  == 0) ||
-           (ft_strcmp(name, "cd")    == 0) ||
-           (ft_strcmp(name, "pwd")   == 0) ||
-           (ft_strcmp(name, "export")== 0) ||
-           (ft_strcmp(name, "unset") == 0) ||
-           (ft_strcmp(name, "env")   == 0) ||
-           (ft_strcmp(name, "exit")  == 0);
-}
 
 static int backup_fds()
 {
@@ -123,37 +111,7 @@ static int restore_fds()
 	return 0;
 }
 
-int  apply_redirs_in_parent(t_cmd *pipeline) //在父进程应用重定向
-{
-	t_redir *curr = pipeline->redirs;
 
-	while (curr)
-	{
-		int fd;
-		if (curr->redir_type == R_REDIR_IN) // < 语义：把文件内容作为命令的标准输入。
-		{
-			if (apply_redir_in(curr->target) < 0)
-        		return (-1);
-		}
-		else if (curr->redir_type == R_REDIR_OUT) // > 语义：把命令的标准输出写入文件，覆盖原有内容。
-		{
-			if (apply_redir_out(curr->target) < 0)
-        		return (-1);
-		}
-		else if (curr->redir_type == R_REDIR_APPEND) // >> 语义：把命令的标准输出写入文件，追加到文件末尾。
-		{
-			if (apply_redir_append(curr->target) < 0)
-				return (-1);
-		}
-		else if (curr->redir_type == R_REDIR_HEREDOC) // <<
-		{
-			if (apply_redir_heredoc(curr->target, curr->do_expand) < 0)
-				return (-1);
-		}
-	}
-	curr = curr->next;
-	return (0);
-}
 
 	
 
