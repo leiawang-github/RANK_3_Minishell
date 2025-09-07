@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:30:30 by leia              #+#    #+#             */
-/*   Updated: 2025/09/02 13:45:49 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/04 19:26:21 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ t_cmd_type analyze_cmd(t_cmd *cmd)
         return CMD_BUILTIN;
     }
     return CMD_EXTERNAL;
-
 }
 
 int is_builtin(const char *file)

@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/01 23:43:24 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/06 06:26:26 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,13 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <readline/readline.h>
+
+#ifndef READ_END
+# define READ_END  0
+#endif
+#ifndef WRITE_END
+# define WRITE_END 1
+#endif
 
 typedef struct s_executor {
     t_cmd      *cmds;      // 命令链表
@@ -72,20 +79,22 @@ typedef enum e_cmd_type
 
 extern int g_last_status;
 
-int exec_single_cmd(pipeline);
-int exec_pipeline(pipeline);
-
-int  cmd_contains_only_redirs(t_cmd *cmd);
+t_cmd_type analyze_cmd(t_cmd *cmd); 
+int is_builtin(const char *file);
 
  
 
-
-int  apply_redirs_in_parent(t_cmd *pipeline);
-int is_builtin(const char *name);
-
+int exec_single_cmd(pipeline);
+int exec_pipeline(pipeline);
 
 
-int prehandle_heredocs(t_cmd *pipeline);
+int   exec_redir_only(t_cmd *pipeline);
+int   exec_builtin(pipeline, envp);
+int   exec_single_external(pipeline, *envp);
+int   execute_command(t_cmd *pipeline, char **envp);
+ 
+
+int ft_perror(const char *where);
 
 
 #endif

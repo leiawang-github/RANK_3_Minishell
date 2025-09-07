@@ -6,26 +6,52 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/02 13:50:27 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/05 08:32:08 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "executor.h"
 
 
-
-
-void execute_command(t_cmd *cmd) {
-    // 先处理重定向
-    if (has_redirects(cmd)) {
-        handle_redirects(cmd);
-    }
+int execute_command(t_cmd *pipeline, char **envp)
+{
+    t_cmd_type cmd_type;
     
-    // 再执行命令
-    if (cmd->cmd_type == CMD_BUILTIN) {
-        execute_builtin(cmd);
+    if (!pipeline)
+        return (0);
+    if(!pipeline->next) // single command
+    {
+        cmd_type = analyze_cmd(pipeline);
+        {
+            if (cmd_type == CMD_REDIR_ONLY) //单节点只有重定向
+                return exec_redir_only(pipeline);
+            if (cmd_type == CMD_BUILTIN) 
+                return exec_builtin(pipeline, envp); //这里面还要分：有重定向和无重定向
+            if (cmd_type == CMD_EXTERNAL)
+                return exec_single_external(pipeline, *envp); //外部命令，里面也要分：有重定向和无重定向
+        }
+        return (127);
     }
-    else if (cmd->content == CMD_EXTERNAL) {
-        execute_external(cmd);
-    }
+    return
+        exec_pipeline(pipeline, envp);
 }
+    
+
+
+
+
+
+
+
+
+
+	 
+
+
+
+
+
+	
+
+	
+
