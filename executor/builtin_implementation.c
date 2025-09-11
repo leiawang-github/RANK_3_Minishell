@@ -10,7 +10,9 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/minishell.h"
+#include "../include/env_copy.h"
+#include "../include/executor.h"
 
 static int is_flag_n(const char *s)
 {
@@ -102,12 +104,41 @@ int builtin_unset(char **argv)
     
 }
 
-int builtin_env(void)
+int builtin_env(char **argv, t_env *env_list)
 {
-        
+    t_env *cur;
 
+    if (argv && argv[1] != NULL)
+        return env_arg_error(argv);
 
-    
+    cur = env_list;
+    while (cur)
+    {
+        if (cur->value != NULL)
+            print_name_value(cur->name, cur->value);
+        cur = cur->next;
+    }
+    return 0;
+}
+
+static void print_name_value(const char *name, const char *value)
+{
+    if (!name || !value)
+        return;
+    printf("%s", name);
+    printf("=");
+    printf("%s\n",value);
+}
+
+static int  env_arg_error(const char *arg)
+{
+    write(2, "minishell: env: ", 16);
+    if (arg && *arg)
+        write(2, arg, ft_strlen(arg));
+    else
+        write(2, "(null)", 6);
+    write(2, ": No such file or directory\n", 28);
+    return 127;
 }
 
 int builtin_exit(char **argv)
