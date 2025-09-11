@@ -6,52 +6,36 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/05 08:32:08 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/08 19:49:42 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "executor.h"
 
-
 int execute_command(t_cmd *pipeline, char **envp)
 {
+    int rc, interrupted;
     t_cmd_type cmd_type;
-    
+
+    rc = 0;
+    interrupted = 0;
+    rc = preprocess_heredoc(pipeline, envp, &interrupted);
+    if (rc != 0)
+        return rc; /* 130 if interrupted, else error */
     if (!pipeline)
-        return (0);
-    if(!pipeline->next) // single command
+        return 0;
+    if (!pipeline->next) //单节点
     {
         cmd_type = analyze_cmd(pipeline);
-        {
-            if (cmd_type == CMD_REDIR_ONLY) //单节点只有重定向
-                return exec_redir_only(pipeline);
-            if (cmd_type == CMD_BUILTIN) 
-                return exec_builtin(pipeline, envp); //这里面还要分：有重定向和无重定向
-            if (cmd_type == CMD_EXTERNAL)
-                return exec_single_external(pipeline, *envp); //外部命令，里面也要分：有重定向和无重定向
-        }
-        return (127);
+        if (cmd_type == CMD_REDIR_ONLY)
+            return exec_redir_only(pipeline);
+        if (cmd_type == CMD_BUILTIN)
+            return  exec_builtin_in_single_cmd(pipeline);
+        if (cmd_type == CMD_EXTERNAL)
+            return exec_single_external(pipeline, envp);
+        return 127;
     }
-    return
-        exec_pipeline(pipeline, envp);
+    /* pipeline */
+    return exec_pipeline(pipeline, envp);
 }
-    
-
-
-
-
-
-
-
-
-
-	 
-
-
-
-
-
-	
-
-	
 

@@ -6,11 +6,17 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 16:27:17 by leia              #+#    #+#             */
-/*   Updated: 2025/09/05 08:31:34 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/10 00:03:53 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "executor.h"
+
+/* forward static prototypes */
+static int handle_in_redir(const char *file);
+static int handle_out_redir(const char *file);
+static int handle_append_redir(const char *file);
+static int handle_heredoc_redir(t_redir *redir);
 
 int   exec_redir_only(t_cmd *pipeline)  //single node, only redirections
 {
@@ -27,7 +33,7 @@ int   exec_redir_only(t_cmd *pipeline)  //single node, only redirections
 		else if (redir->redir_type == R_REDIR_APPEND) // >> 语义：把命令的标准输出写入文件，追加到文件末尾。
 			rc  = handle_append_redir(redir->file);
 		else if (redir->redir_type == R_REDIR_HEREDOC) // <<
-			rc  = handle_heredoc_redir(redir->delimiter);
+			rc  = handle_heredoc_redir(redir);
 		if (rc < 0)
             return (-1);
         redir = redir->next;
@@ -40,11 +46,7 @@ static int handle_in_redir(const char *file)
 	int fd;
     
     fd = open(file, O_RDONLY);
-	if (fd < 0) 
-    { 
-        ft_perror(file); 
-        return -1; 
-    }
+        return err_file_errno(file, errno);
 	close(fd);
 	return 0;
 }
@@ -54,10 +56,7 @@ static int handle_out_redir(const char *file)
 	int fd;
     fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd < 0) 
-    { 
-        ft_perror(file); 
-        return -1; 
-    }
+         return err_file_errno(file, errno);
 	close(fd);
 	return 0;
 }
@@ -66,37 +65,26 @@ static int handle_append_redir(const char *file)
 {
 	int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	if (fd < 0) 
-    { 
-        ft_perror(file); 
-        return -1; 
-    }
+        return err_file_errno(file, errno);
 	close(fd);
 	return 0;
 }
 
-static int handle_heredoc_redir(const char *delimiter) 
+
+static int handle_heredoc_redir(t_redir *redir)
 {
-    int pipefd[2];
-    char *line;
-
-    if (pipe(pipefd) == -1) 
-    { 
-        ft_perror("pipe"); 
-        return -1; 
-    }
-
-    while (1) 
+    int saved;
+    
+    if (!redir)
+         return err_msg("heredoc: internal error"); 
+    if (redir->fd < 0) 
+        return err_msg("heredoc: not prepared");
+    if (close(redir->fd) < 0) 
     {
-        line = readline("> ");
-        if (!line || ft_strcmp(line, delimiter) == 0) 
-        {
-            free(line);
-            break;
-        }
-        write(pipefd[1], line, strlen(line));
-        write(pipefd[1], "\n", 1);
-        free(line);
+        saved = errno;        
+        redir->fd = -1;          
+        return err_file_errno("close", saved);
     }
-    close(pipefd[1]); // 关闭写端
-    return pipefd[0]; // 返回读端
+    redir->fd = -1;
+    return 0;
 }

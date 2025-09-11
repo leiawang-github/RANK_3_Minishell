@@ -6,8 +6,18 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/07 14:18:11 by leia              #+#    #+#             */
-/*   Updated: 2025/09/07 14:18:17 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/07 17:57:03 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "executor.h"
+
+void sigint_handler(int sig)
+{
+    (void)sig;
+    g_last_status = 130;
+    write(1, "\n", 1);
+    rl_on_new_line();
+    rl_replace_line("", 0);
+    rl_redisplay();
+}

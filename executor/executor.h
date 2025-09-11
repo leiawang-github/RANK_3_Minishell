@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/06 06:26:26 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/10 17:43:21 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,86 +15,112 @@
 #ifndef EXECUTOR_H
 #define EXECUTOR_H
 
+/* Standard headers */
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <sys/stat.h>
+
+/* Readline (used by heredoc) */
 #include <readline/readline.h>
+#include <readline/history.h>
 
-#ifndef READ_END
-# define READ_END  0
+/* Some environments (e.g., libedit) may not expose these prototypes */
+#ifndef RL_API_DECLARED
+#define RL_API_DECLARED 1
+extern int  rl_on_new_line(void);
+extern void rl_replace_line(const char *text, int clear_undo);
+extern void rl_redisplay(void);
 #endif
-#ifndef WRITE_END
-# define WRITE_END 1
-#endif
 
-typedef struct s_executor {
-    t_cmd      *cmds;      // 命令链表
-     char       *path;      // 完整路径（执行时查找）
-    char        **envp;         // 环境变量
-    t_cmd_type type;     // 命令类型
-    t_redir   *redirs;   // 重定向信息
-    int         status;         // 执行状态
-    pid_t       *pids;          // 子进程PID数组
-    int         pipe_count;     // 管道数量
-} t_executor;
-
-typedef struct s_cmd {
-    char     **argv; // first one will be cmd_name, the comes with arguments
-    t_redir   *redirs; // a linked list, see below
-    struct s_cmd *next;
-} t_cmd;
-
-
-typedef struct s_redir 
-{
-    t_redir_type redir_type;   // which kind of redirection
-    char        *file; // file path or heredoc delimiter
-    char        *delimiter; // this is the char* after remove quotes(either single or double),ex: "EOF" -> EOF 
-    int          do_expand; // only for heredoc one case: if delimiter is quoted, do_expand = 0; else do_expand = 1
-    int          fd; // file descriptor after open 
-    struct s_redir *next;   // pointer for linking multiple redirs
-}   t_redir;
-
-typedef enum e_redir_type
-{
-    R_REDIR_NONE,
+/* Redirection types */
+typedef enum e_redir_type {
+    R_REDIR_NONE = 0,
     R_REDIR_IN,
     R_REDIR_OUT,
     R_REDIR_APPEND,
     R_REDIR_HEREDOC
 } t_redir_type;
 
-typedef enum e_cmd_type 
-{
-    CMD_REDIR_ONLY,      // 空命令（只有重定向）
-    CMD_BUILTIN,    // 内置命令
-    CMD_EXTERNAL,   // 外部命令
-    CMD_INVALID     // 无效命令
+/* Forward decls */
+typedef struct s_redir t_redir;
+typedef struct s_cmd   t_cmd;
+
+/* Redir node */
+struct s_redir {
+    t_redir_type   redir_type;   /* which kind of redirection */
+    char          *file;         /* for <, >, >> */
+    char          *delimiter;    /* for << (after quote removal) */
+    int            do_expand;    /* heredoc: expand variables? */
+    int            fd;           /* heredoc pipe read-end (preprocessed) */
+    struct s_redir *next;
+};
+
+/* Command node */
+struct s_cmd {
+    char     **argv;   /* argv[0] is command name */
+    t_redir   *redirs; /* linked list of redirections */
+    t_cmd     *next;   /* next command in pipeline */
+};
+
+/* Command classification */
+typedef enum e_cmd_type {
+    CMD_REDIR_ONLY = 0,  /* empty command with only redirections */
+    CMD_BUILTIN,
+    CMD_EXTERNAL,
+    CMD_INVALID
 } t_cmd_type;
 
+enum e_err {
+    ERR_NONE,
+    ERR_SYNTAX,
+    ERR_CMD_NOT_FOUND,
+    ERR_CANNOT_EXEC,     // perm denied / is a directory / exec format
+    ERR_SYS_BUILTIN,     // 内建的系统错误
+    ERR_REDIR,           // 打开重定向失败
+    ERR_SIGINT, ERR_SIGQUIT
+};
+
+/* Global last status (provided by shell core) */
 extern int g_last_status;
 
-t_cmd_type analyze_cmd(t_cmd *cmd); 
-int is_builtin(const char *file);
+/* Analyzer */
+t_cmd_type analyze_cmd(t_cmd *cmd);
+int        is_builtin(const char *file);
 
- 
+/* Pipeline dispatcher */
+int execute_command(t_cmd *pipeline, char **envp);
 
-int exec_single_cmd(pipeline);
-int exec_pipeline(pipeline);
+/* Single/pipeline executors */
+int exec_redir_only(t_cmd *node);
+int exec_builtin_in_single_cmd(t_cmd *pipeline);
+int exec_single_external(t_cmd *node, char **envp);
+int exec_pipeline(t_cmd *head, char **envp);
 
+/* Heredoc preprocess */
+int preprocess_heredoc(t_cmd *pipeline, char **envp, int *interrupted);
 
-int   exec_redir_only(t_cmd *pipeline);
-int   exec_builtin(pipeline, envp);
-int   exec_single_external(pipeline, *envp);
-int   execute_command(t_cmd *pipeline, char **envp);
- 
+/* Error helper */
+int ft_errno(const char *file, int saved_errno);
+int err_msg(const char *msg);
 
-int ft_perror(const char *where);
+//implementation of builtins
+int builtin_echo(char **argv);
+int builtin_cd(char **argv);
+int builtin_pwd(void);
+int builtin_export(char **argv);
+int builtin_unset(char **argv);
+int builtin_env(void);
+int builtin_exit(char **argv);
 
+/* Signal handlers */
+void sigint_handler(int sig);
 
 #endif
