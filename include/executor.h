@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/10 17:43:21 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/12 18:01:29 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,5 +120,10 @@ int builtin_exit(char **argv);
 
 /* Signal handlers */
 void sigint_handler(int sig);
+
+
+
+int is_valid_var_name(const char *name);
+
 
 #endif

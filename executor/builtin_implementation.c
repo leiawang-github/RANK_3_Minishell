@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 19:54:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/10 21:43:14 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/12 14:51:19 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,19 +89,6 @@ int builtin_cd(char **argv, t_env *env)
     free(newpwd);
     g_last_status = 0;    
     return (0);
-}
-
-int builtin_export(char **argv)
-{
-    
-
-
-    
-}
-
-int builtin_unset(char **argv)
-{
-    
 }
 
 int builtin_env(char **argv, t_env *env_list)
