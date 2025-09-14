@@ -6,15 +6,16 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/08 19:49:42 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 10:58:26 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/executor.h"
 
 int execute_command(t_cmd *pipeline, char **envp)
 {
-    int rc, interrupted;
+    int rc;
+    int interrupted;
     t_cmd_type cmd_type;
 
     rc = 0;
@@ -38,4 +39,5 @@ int execute_command(t_cmd *pipeline, char **envp)
     /* pipeline */
     return exec_pipeline(pipeline, envp);
 }
+
 

@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 19:54:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/12 14:51:19 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 12:07:21 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,16 +14,16 @@
 #include "../include/env_copy.h"
 #include "../include/executor.h"
 
-static int is_flag_n(const char *s)
+static int is_n_option(const char *n_option)
 {
     int i;
 
-    if (!s || s[0] != '-' || s[1] == '\0')
+    if (!n_option || n_option[0] != '-' || n_option[1] == '\0') //should be '-' without space , so '-   n' is not ok
         return 0;
-    i = 1;
-    while (s[i] == 'n')
+    i = 1; //check after '-', see if there is n or many ns like -nn, -nnnnn 
+    while (n_option[i] == 'n')
         i++;
-    return s[i] == '\0'; /* 形如 -n, -nn, -nnn */
+    return n_option[i] == '\0'; // if the const char end with '\0', means it is a valid n_string
 }
 
 int builtin_echo(char **argv)
@@ -32,8 +32,8 @@ int builtin_echo(char **argv)
     int newline;
     
     i = 1;
-    newline = 1; 
-    while (argv[i] && is_flag_n(argv[i]))
+    newline = 1; // we set default a newline, this is a flag
+    while (argv[i] && is_n_option(argv[i]))
     {
         newline = 0;
         i++;

@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/11 23:20:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/13 11:37:05 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/13 15:50:48 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,10 +54,17 @@ int builtin_export(char **argv, t_env **env_list)
 static int show_all_exported_vars(t_env *env_list)
 {
     t_env **nodes = convert_list_to_array(env_list);
-    qsort(nodes, count, sizeof(t_env*), compare_env_names);
+    if (!nodes) return 1;
+    
+    int count;
+    
+    count = 0;
+    while (nodes[count]) count++;
+    sort_env_array(nodes, count);
+    
+    // 输出
     int i = 0;
-    while (i < count)
-    {
+    while (i < count) {
         printf("declare -x %s", nodes[i]->name);
         if (nodes[i]->value && nodes[i]->value[0]) {
             printf("=\"%s\"", nodes[i]->value);
@@ -77,6 +84,7 @@ static  char **convert_list_to_array(t_env *env_list)
     t_env *current;  
     int count;
 
+    current = env_list;
     count = ft_lstsize(current);
     if (count == 0) 
         return NULL;
@@ -95,3 +103,25 @@ static  char **convert_list_to_array(t_env *env_list)
     return array;
 }
 
+static void sort_env_array(t_env **nodes, int count)
+{
+    int i, j;
+    t_env *temp;
+    
+    i = 0;
+    while (i < count - 1)
+    {
+        j = 0;
+        while (j < count - i - 1)
+        {
+            if (ft_strcmp(nodes[j]->name, nodes[j + 1]->name) > 0)
+            {
+                temp = nodes[j];
+                nodes[j] = nodes[j + 1];
+                nodes[j + 1] = temp;
+            }
+            j++;
+        }
+        i++;
+    }
+}

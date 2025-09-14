@@ -6,25 +6,21 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:35:23 by leia              #+#    #+#             */
-/*   Updated: 2025/09/08 21:40:45 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 11:40:28 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
-extern int g_last_status;
+#include "../include/executor.h"
+#include "../include/env_copy.h"
 
 int exec_builtin_in_single_cmd(t_cmd *pipeline) //已经知道是单节点builtin, no need to fork
 {
     t_cmd *node;
-    int rc;
+    int rc; // return code as side effect
     int bak[3];
 
-    if (!pipeline || !pipeline->argv || !pipeline->argv[0]) {
-        g_last_status = 1;
-        return 1;
-    }
     node = pipeline;
-    if(node->redirs == NULL)
+    if(node->redirs == NULL) // single node builtin but no redir
     {
         rc = builtin_implementation(pipeline);
         g_last_status = rc;
@@ -93,7 +89,7 @@ static int apply_redirs_parent(t_redir *r)
     return 0;
 }
 
-static int builtin_implementation(t_cmd *pipeline) //single node without redirection
+int builtin_implementation(t_cmd *pipeline) //single node without redirection
 {
     t_cmd *node;
 

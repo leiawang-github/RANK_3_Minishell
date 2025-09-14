@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/12 18:01:29 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 11:54:25 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ struct s_cmd {
 
 /* Command classification */
 typedef enum e_cmd_type {
-    CMD_REDIR_ONLY = 0,  /* empty command with only redirections */
+    CMD_REDIR_ONLY,  /* empty command with only redirections */
     CMD_BUILTIN,
     CMD_EXTERNAL,
     CMD_INVALID
@@ -86,12 +86,14 @@ enum e_err {
     ERR_SIGINT, ERR_SIGQUIT
 };
 
+
 /* Global last status (provided by shell core) */
 extern int g_last_status;
 
 /* Analyzer */
 t_cmd_type analyze_cmd(t_cmd *cmd);
-int        is_builtin(const char *file);
+
+int builtin_implementation(t_cmd *pipeline);
 
 /* Pipeline dispatcher */
 int execute_command(t_cmd *pipeline, char **envp);

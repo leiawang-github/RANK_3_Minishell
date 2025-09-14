@@ -6,25 +6,39 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:30:30 by leia              #+#    #+#             */
-/*   Updated: 2025/09/07 21:27:33 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 11:54:12 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/executor.h"
 
-t_cmd_type analyze_cmd(t_cmd *cmd) 
+t_cmd_type analyze_cmd(t_cmd *pipeline) 
 {
-    if(!cmd)
+    if(!pipeline)
         return CMD_INVALID;
-    if (!cmd->argv || !cmd->argv[0]) 
+    if (!pipeline->argv || !pipeline->argv[0]) 
     {
-        if(cmd->redirs)
+        if(pipeline->redirs)
             return CMD_REDIR_ONLY; 
         return CMD_INVALID;
     }
-    if (is_builtin(cmd->argv[0])) 
-    {
+    if (get_builtin_type(pipeline->argv[0]) != BUILTIN_NONE)
         return CMD_BUILTIN;
-    }
     return CMD_EXTERNAL;
 }
+
+static int is_builtin(t_cmd *pipeline)
+{
+    const char *cmd_name;
+    
+    cmd_name = pipeline->argv[0];
+    
+    return (ft_strcmp(cmd_name, "echo") == 0 ||
+            ft_strcmp(cmd_name, "cd") == 0 ||
+            ft_strcmp(cmd_name, "pwd") == 0 ||
+            ft_strcmp(cmd_name, "env") == 0 ||
+            ft_strcmp(cmd_name, "unset") == 0 ||
+            ft_strcmp(cmd_name, "exit") == 0 ||
+            ft_strcmp(cmd_name, "export") == 0);
+}
+
