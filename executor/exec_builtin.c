@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:35:23 by leia              #+#    #+#             */
-/*   Updated: 2025/09/15 23:00:48 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/09/15 23:02:47 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list) //已经知道�
         return rc;
     }
 }
+
 
 static int apply_redirs_parent(t_redir *r)
 {
@@ -106,7 +107,7 @@ int builtin_implementation(t_cmd *pipeline, t_env *env_list) //single node witho
     else if (ft_strcmp(cmd_name, "export") == 0)
         return builtin_export(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "unset") == 0)
-        return builtin_unset(node->argv);
+        return builtin_unset(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "env") == 0)
         return builtin_env(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
