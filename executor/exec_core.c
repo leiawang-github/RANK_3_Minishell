@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   exec_core.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/07 16:55:00 by leia              #+#    #+#             */
-/*   Updated: 2025/09/07 17:00:00 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 22:57:09 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/executor.h"
 
 static const char *get_env(const char *key, char **envp)
 {

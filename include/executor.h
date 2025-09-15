@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   executor.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 16:42:39 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 23:00:19 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,8 @@
 /* Readline (used by heredoc) */
 #include <readline/readline.h>
 #include <readline/history.h>
+
+#include "env_copy.h"
 
 
 /* Redirection types */
@@ -86,14 +88,13 @@ extern int g_last_status;
 /* Analyzer */
 t_cmd_type analyze_cmd(t_cmd *cmd);
 
-int builtin_implementation(t_cmd *pipeline);
 
 /* Pipeline dispatcher */
-int execute_command(t_cmd *pipeline, char **envp);
+int execute_command(t_cmd *pipeline, char **envp, t_env *env_list);
 
 /* Single/pipeline executors */
 int exec_redir_only(t_cmd *node);
-int exec_builtin_in_single_cmd(t_cmd *pipeline);
+int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list);
 int exec_single_external(t_cmd *node, char **envp);
 int exec_pipeline(t_cmd *head, char **envp);
 
@@ -108,9 +109,9 @@ int err_msg(const char *msg);
 int builtin_echo(char **argv);
 int builtin_cd(char **argv, t_env *env);
 int builtin_pwd(void);
-int builtin_export(char **argv);
-int builtin_unset(char **argv);
-int builtin_env(void);
+int builtin_export(char **argv, t_env **env_list);
+int builtin_unset(char **argv, t_env **env_list);
+int builtin_env(char **argv, t_env *env_list);
 int builtin_exit(char **argv);
 
 /* Signal handlers */
@@ -122,3 +123,4 @@ int is_valid_var_name(const char *name);
 
 
 #endif
+

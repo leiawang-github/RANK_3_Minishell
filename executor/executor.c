@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   executor.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 10:58:26 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 22:59:27 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 
-int execute_command(t_cmd *pipeline, char **envp)
+int execute_command(t_cmd *pipeline, char **envp, t_env *env_list)
 {
     int rc;
     int interrupted;
@@ -31,7 +31,7 @@ int execute_command(t_cmd *pipeline, char **envp)
         if (cmd_type == CMD_REDIR_ONLY)
             return exec_redir_only(pipeline);
         if (cmd_type == CMD_BUILTIN)
-            return  exec_builtin_in_single_cmd(pipeline);
+            return  exec_builtin_in_single_cmd(pipeline, env_list);
         if (cmd_type == CMD_EXTERNAL)
             return exec_single_external(pipeline, envp);
         return 127;

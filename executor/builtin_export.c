@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_export.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/11 23:20:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/13 15:50:48 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 23:00:24 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 #include "../include/env_copy.h"
 
 /*
-
 参数处理：区分 VAR=value 和 VAR
 变量名验证：检查标识符有效性
 环境变量操作：设置/更新变量
@@ -35,11 +34,11 @@ int builtin_export(char **argv, t_env **env_list)
 
     while (argv[argc])
         argc++;
-    
+
     if (argc == 1)
         return show_all_exported_vars(env_list);
     while (i < argc) {
-        if (argv[i][0] == '-' && argv[i][1] != '\0') 
+        if (argv[i][0] == '-' && argv[i][1] != '\0')
         {
             i++;
             continue;  // 不是 return，而是 continue
@@ -55,13 +54,13 @@ static int show_all_exported_vars(t_env *env_list)
 {
     t_env **nodes = convert_list_to_array(env_list);
     if (!nodes) return 1;
-    
+
     int count;
-    
+
     count = 0;
     while (nodes[count]) count++;
     sort_env_array(nodes, count);
-    
+
     // 输出
     int i = 0;
     while (i < count) {
@@ -74,22 +73,22 @@ static int show_all_exported_vars(t_env *env_list)
         printf("\n");
         i++;
     }
-    
+
     free(nodes);
     return 0;
 }
 
 static  char **convert_list_to_array(t_env *env_list)
 {
-    t_env *current;  
+    t_env *current;
     int count;
 
     current = env_list;
     count = ft_lstsize(current);
-    if (count == 0) 
+    if (count == 0)
         return NULL;
     char **array = malloc((count + 1) * sizeof(char*));
-    if (!array) 
+    if (!array)
         return NULL;
     current = env_list;
     int i = 0;
@@ -107,7 +106,7 @@ static void sort_env_array(t_env **nodes, int count)
 {
     int i, j;
     t_env *temp;
-    
+
     i = 0;
     while (i < count - 1)
     {

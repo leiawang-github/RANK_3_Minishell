@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   exec_builtin.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:35:23 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 11:40:28 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 23:00:48 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/env_copy.h"
 
-int exec_builtin_in_single_cmd(t_cmd *pipeline) //已经知道是单节点builtin, no need to fork
+int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list) //已经知道是单节点builtin, no need to fork
 {
     t_cmd *node;
     int rc; // return code as side effect
@@ -22,7 +22,7 @@ int exec_builtin_in_single_cmd(t_cmd *pipeline) //已经知道是单节点builti
     node = pipeline;
     if(node->redirs == NULL) // single node builtin but no redir
     {
-        rc = builtin_implementation(pipeline);
+        rc = builtin_implementation(pipeline, env_list);
         g_last_status = rc;
         return rc;
     }
@@ -38,7 +38,7 @@ int exec_builtin_in_single_cmd(t_cmd *pipeline) //已经知道是单节点builti
             restore_fds(bak);
             return -1;
         }
-        rc = builtin_implementation(pipeline);
+        rc = builtin_implementation(pipeline, env_list);
         if (restore_fds(bak) < 0)
         {
             g_last_status = 1;
@@ -89,30 +89,30 @@ static int apply_redirs_parent(t_redir *r)
     return 0;
 }
 
-int builtin_implementation(t_cmd *pipeline) //single node without redirection
+int builtin_implementation(t_cmd *pipeline, t_env *env_list) //single node without redirection
 {
     t_cmd *node;
 
     char *cmd_name;
     node = pipeline;
     cmd_name = node->argv[0];
-    
+
     if (ft_strcmp(cmd_name, "echo") == 0)
             return builtin_echo(node->argv);
     else if (ft_strcmp(cmd_name, "cd") == 0)
-        return builtin_cd(node->argv);
+        return builtin_cd(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "pwd") == 0)
         return builtin_pwd();
     else if (ft_strcmp(cmd_name, "export") == 0)
-        return builtin_export(node->argv);
+        return builtin_export(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "unset") == 0)
         return builtin_unset(node->argv);
     else if (ft_strcmp(cmd_name, "env") == 0)
-        return builtin_env();
+        return builtin_env(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
         return builtin_exit(node->argv);
     return 127; // Not a recognized builtin
-    
+
 }
 
 

@@ -3,39 +3,39 @@
 /*                                                        :::      ::::::::   */
 /*   ft_error.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/06 05:42:29 by leia              #+#    #+#             */
-/*   Updated: 2025/09/10 17:43:05 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 22:56:46 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/executor.h"
 
-void error_status(enum e_err kind, int errno_saved) 
+void error_status(enum e_err kind, int errno_saved)
 {
-    if (kind == ERR_SYNTAX) 
+    if (kind == ERR_SYNTAX)
         g_last_status = 2;
-    else if (kind == ERR_CMD_NOT_FOUND) 
+    else if (kind == ERR_CMD_NOT_FOUND)
         g_last_status = 127;
-    else if (kind == ERR_CANNOT_EXEC) 
+    else if (kind == ERR_CANNOT_EXEC)
         g_last_status = 126;
-    else if (kind == ERR_SIGINT) 
+    else if (kind == ERR_SIGINT)
         g_last_status = 130;
-    else if (kind == ERR_SIGQUIT) 
+    else if (kind == ERR_SIGQUIT)
         g_last_status = 131;
-    else 
+    else
         g_last_status = 1;
 }
 
 
 int ft_errno(const char *file, int saved_errno)
 {
-    write(2, "minishell: ", 11);  
-    errno = saved_errno;          
-    perror(file);               
+    write(2, "minishell: ", 11);
     errno = saved_errno;
-    g_last_status = 1;          
+    perror(file);
+    errno = saved_errno;
+    g_last_status = 1;
     return -1;
 }
 

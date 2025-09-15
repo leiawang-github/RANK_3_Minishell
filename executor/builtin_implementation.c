@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_implementation.c                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 19:54:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 12:37:55 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 22:56:16 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ int builtin_echo(char **argv)
 {
     int i;
     int newline;
-    
+
     i = 1; // here argv[0] should be "echo", but we only focus what's after echo
     newline = 1; // we set default a newline, this is a flag
     while (argv[i] && is_n_option(argv[i])) // if we found n_option of the number i argv
@@ -26,10 +26,10 @@ int builtin_echo(char **argv)
         newline = 0; //dont give a newline
         i++; //we just move onward to next argv
     }
-    while (argv[i]) 
+    while (argv[i])
     {
         write(1, argv[i], ft_strlen(argv[i]));
-        if (argv[i + 1]) 
+        if (argv[i + 1])
             write(1, " ", 1); // if the next argv exists we put a space
         i++;
     }
@@ -44,7 +44,7 @@ static int is_n_option(const char *n_option)
 
     if (!n_option || n_option[0] != '-' || n_option[1] == '\0') //should be '-' without space , so '-   n' is not ok
         return 0;
-    i = 1; //check after '-', see if there is n or many ns like -nn, -nnnnn 
+    i = 1; //check after '-', see if there is n or many ns like -nn, -nnnnn
     while (n_option[i] == 'n')
         i++;
     return n_option[i] == '\0'; // if the const char end with '\0', means it is a valid n_string
@@ -64,49 +64,12 @@ int builtin_pwd(void)
     return 1;
 }
 
-int builtin_env(char **argv, t_env *env_list)
-{
-    t_env *cur;
-
-    if (argv && argv[1] != NULL)
-        return env_arg_error(argv);
-
-    cur = env_list;
-    while (cur)
-    {
-        if (cur->value != NULL)
-            print_name_value(cur->name, cur->value);
-        cur = cur->next;
-    }
-    return 0;
-}
-
-static void print_name_value(const char *name, const char *value)
-{
-    if (!name || !value)
-        return;
-    printf("%s", name);
-    printf("=");
-    printf("%s\n",value);
-}
-
-static int  env_arg_error(const char *arg)
-{
-    write(2, "minishell: env: ", 16);
-    if (arg && *arg)
-        write(2, arg, ft_strlen(arg));
-    else
-        write(2, "(null)", 6);
-    write(2, ": No such file or directory\n", 28);
-    return 127;
-}
-
 int builtin_exit(char **argv)
 {
-    (void)argv;  
-    write(1, "exit\n", 5);       
-    exit(g_last_status);      
-    return 0; 
+    (void)argv;
+    write(1, "exit\n", 5);
+    exit(g_last_status);
+    return 0;
 }
 
 

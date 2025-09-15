@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   exec_redirs.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 16:27:17 by leia              #+#    #+#             */
-/*   Updated: 2025/09/10 00:03:53 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 22:46:02 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/executor.h"
 
 /* forward static prototypes */
 static int handle_in_redir(const char *file);
@@ -41,30 +41,30 @@ int   exec_redir_only(t_cmd *pipeline)  //single node, only redirections
 	return (0);
 }
 
-static int handle_in_redir(const char *file) 
+static int handle_in_redir(const char *file)
 {
 	int fd;
-    
+
     fd = open(file, O_RDONLY);
         return err_file_errno(file, errno);
 	close(fd);
 	return 0;
 }
 
-static int handle_out_redir(const char *file) 
+static int handle_out_redir(const char *file)
 {
 	int fd;
     fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	if (fd < 0) 
+	if (fd < 0)
          return err_file_errno(file, errno);
 	close(fd);
 	return 0;
 }
 
-static int handle_append_redir(const char *file) 
+static int handle_append_redir(const char *file)
 {
 	int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-	if (fd < 0) 
+	if (fd < 0)
         return err_file_errno(file, errno);
 	close(fd);
 	return 0;
@@ -74,15 +74,15 @@ static int handle_append_redir(const char *file)
 static int handle_heredoc_redir(t_redir *redir)
 {
     int saved;
-    
+
     if (!redir)
-         return err_msg("heredoc: internal error"); 
-    if (redir->fd < 0) 
+         return err_msg("heredoc: internal error");
+    if (redir->fd < 0)
         return err_msg("heredoc: not prepared");
-    if (close(redir->fd) < 0) 
+    if (close(redir->fd) < 0)
     {
-        saved = errno;        
-        redir->fd = -1;          
+        saved = errno;
+        redir->fd = -1;
         return err_file_errno("close", saved);
     }
     redir->fd = -1;
