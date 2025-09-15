@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:30:30 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 11:54:12 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/15 20:14:14 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ t_cmd_type analyze_cmd(t_cmd *pipeline)
             return CMD_REDIR_ONLY; 
         return CMD_INVALID;
     }
-    if (get_builtin_type(pipeline->argv[0]) != BUILTIN_NONE)
+    if (is_builtin(pipeline))
         return CMD_BUILTIN;
     return CMD_EXTERNAL;
 }

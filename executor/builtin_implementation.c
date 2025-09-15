@@ -6,13 +6,37 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 19:54:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 12:07:21 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 12:37:55 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/minishell.h"
 #include "../include/env_copy.h"
 #include "../include/executor.h"
+
+int builtin_echo(char **argv)
+{
+    int i;
+    int newline;
+    
+    i = 1; // here argv[0] should be "echo", but we only focus what's after echo
+    newline = 1; // we set default a newline, this is a flag
+    while (argv[i] && is_n_option(argv[i])) // if we found n_option of the number i argv
+    {
+        newline = 0; //dont give a newline
+        i++; //we just move onward to next argv
+    }
+    while (argv[i]) 
+    {
+        write(1, argv[i], ft_strlen(argv[i]));
+        if (argv[i + 1]) 
+            write(1, " ", 1); // if the next argv exists we put a space
+        i++;
+    }
+    if (newline)
+        write(1, "\n", 1);
+    return 0;
+}
 
 static int is_n_option(const char *n_option)
 {
@@ -24,30 +48,6 @@ static int is_n_option(const char *n_option)
     while (n_option[i] == 'n')
         i++;
     return n_option[i] == '\0'; // if the const char end with '\0', means it is a valid n_string
-}
-
-int builtin_echo(char **argv)
-{
-    int i;
-    int newline;
-    
-    i = 1;
-    newline = 1; // we set default a newline, this is a flag
-    while (argv[i] && is_n_option(argv[i]))
-    {
-        newline = 0;
-        i++;
-    }
-    while (argv[i])
-    {
-        write(1, argv[i], ft_strlen(argv[i]));
-        if (argv[i + 1])
-            write(1, " ", 1);
-        i++;
-    }
-    if (newline)
-        write(1, "\n", 1);
-    return 0;
 }
 
 
@@ -62,33 +62,6 @@ int builtin_pwd(void)
     }
     ft_errno("pwd", errno); // recheck needed
     return 1;
-}
-
-
-int builtin_cd(char **argv, t_env *env)
-{
-    char *newpwd;
-    
-    if (!argv[1])
-        return err_msg("cd: missing argument");
-    if (argv[2])
-        return err_msg("cd: too many arguments"); 
-    if (argv[1][0] == '\0')
-        return err_msg("cd: empty path");
-    if (chdir(argv[1]) != 0) 
-        return ft_errno("cd",errno);
-    newpwd = getcwd(NULL, 0);
-    if (!newpwd)
-    {
-        err_msg("cd: warning: failed to update PWD");
-        g_last_status = 0;
-        return 0;
-    } 
-    if (env)
-        set_env_var(env, "PWD", newpwd);
-    free(newpwd);
-    g_last_status = 0;    
-    return (0);
 }
 
 int builtin_env(char **argv, t_env *env_list)

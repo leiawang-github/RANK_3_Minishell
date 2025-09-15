@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/14 11:54:25 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/14 16:42:39 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,13 +30,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-/* Some environments (e.g., libedit) may not expose these prototypes */
-#ifndef RL_API_DECLARED
-#define RL_API_DECLARED 1
-extern int  rl_on_new_line(void);
-extern void rl_replace_line(const char *text, int clear_undo);
-extern void rl_redisplay(void);
-#endif
 
 /* Redirection types */
 typedef enum e_redir_type {
@@ -113,7 +106,7 @@ int err_msg(const char *msg);
 
 //implementation of builtins
 int builtin_echo(char **argv);
-int builtin_cd(char **argv);
+int builtin_cd(char **argv, t_env *env);
 int builtin_pwd(void);
 int builtin_export(char **argv);
 int builtin_unset(char **argv);
