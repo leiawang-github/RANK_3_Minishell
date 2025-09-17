@@ -18,6 +18,32 @@ static int handle_out_redir(const char *file);
 static int handle_append_redir(const char *file);
 static int handle_heredoc_redir(t_redir *redir);
 
+int exec_redirs(t_redir *redirs)
+{
+    int rc;
+    t_redir *redir;
+
+    redir = redirs;
+    while (redir)
+    {
+        if (redir->redir_type == R_REDIR_IN)
+            rc = handle_in_redir(redir->file);
+        else if (redir->redir_type == R_REDIR_OUT)
+            rc = handle_out_redir(redir->file);
+        else if (redir->redir_type == R_REDIR_APPEND)
+            rc = handle_append_redir(redir->file);
+        else if (redir->redir_type == R_REDIR_HEREDOC)
+            rc = handle_heredoc_redir(redir);
+        else
+            rc = -1;
+        
+        if (rc < 0)
+            return -1;
+        redir = redir->next;
+    }
+    return 0;
+}
+
 int   exec_redir_only(t_cmd *pipeline)  //single node, only redirections
 {
 	int rc;  //means return code
@@ -35,9 +61,13 @@ int   exec_redir_only(t_cmd *pipeline)  //single node, only redirections
 		else if (redir->redir_type == R_REDIR_HEREDOC) // <<
 			rc  = handle_heredoc_redir(redir);
 		if (rc < 0)
+        {
+            g_last_status = 1;  // 重定向失败
             return (-1);
+        }
         redir = redir->next;
 	}
+	g_last_status = 0;  // 重定向成功
 	return (0);
 }
 
@@ -46,7 +76,13 @@ static int handle_in_redir(const char *file)
 	int fd;
 
     fd = open(file, O_RDONLY);
-        return err_file_errno(file, errno);
+    if (fd < 0)
+        return ft_errno(file, errno, ERR_SYS_BUILTIN);
+    if (dup2(fd, STDIN_FILENO) == -1)
+    {
+        close(fd);
+        return ft_errno(file, errno, ERR_SYS_BUILTIN);
+    }
 	close(fd);
 	return 0;
 }
@@ -56,7 +92,12 @@ static int handle_out_redir(const char *file)
 	int fd;
     fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd < 0)
-         return err_file_errno(file, errno);
+         return ft_errno(file, errno, ERR_SYS_BUILTIN);
+    if (dup2(fd, STDOUT_FILENO) == -1)
+    {
+        close(fd);
+        return ft_errno(file, errno, ERR_SYS_BUILTIN);
+    }
 	close(fd);
 	return 0;
 }
@@ -65,7 +106,12 @@ static int handle_append_redir(const char *file)
 {
 	int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	if (fd < 0)
-        return err_file_errno(file, errno);
+        return ft_errno(file, errno, ERR_SYS_BUILTIN);
+    if (dup2(fd, STDOUT_FILENO) == -1)
+    {
+        close(fd);
+        return ft_errno(file, errno, ERR_SYS_BUILTIN);
+    }
 	close(fd);
 	return 0;
 }
@@ -76,14 +122,14 @@ static int handle_heredoc_redir(t_redir *redir)
     int saved;
 
     if (!redir)
-         return err_msg("heredoc: internal error");
+         return err_msg("heredoc", ": internal error", ERR_SYS_BUILTIN);
     if (redir->fd < 0)
-        return err_msg("heredoc: not prepared");
+        return err_msg("heredoc", ": not prepared", ERR_SYS_BUILTIN);
     if (close(redir->fd) < 0)
     {
         saved = errno;
         redir->fd = -1;
-        return err_file_errno("close", saved);
+        return ft_errno("close", saved, ERR_SYS_BUILTIN);
     }
     redir->fd = -1;
     return 0;

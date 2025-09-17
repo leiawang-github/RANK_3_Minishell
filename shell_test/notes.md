@@ -237,3 +237,13 @@ int g_last_status;
 ```
 每次执行完一条命令/一条 pipeline，都更新它。
 
+
+系统调用函数：
+read()     // 读文件 
+write()    // 写文件
+open()     // 打开文件
+close()    // 关闭文件
+fork()     // 创建新进程
+execve()   // 执行新程序
+exit()     // 退出进程
+

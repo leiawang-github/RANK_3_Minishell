@@ -1,23 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   exec_core.c                                        :+:      :+:    :+:   */
+/*   ft_strcmp.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/09/17 17:20:00 by leia              #+#    #+#             */
-/*   Updated: 2025/09/17 17:20:00 by leia             ###   ########.fr       */
+/*   Created: 2025/09/16 22:50:58 by leia              #+#    #+#             */
+/*   Updated: 2025/09/17 16:34:19 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/executor.h"
+#include "libft.h"
 
-/*
- * exec_core.c - Core execution utilities
- * 
- * This file contains core execution utilities that may be shared
- * across different execution functions. Currently empty but ready
- * for future implementation of shared execution logic.
- */
+int	ft_strcmp(const char *s1, const char *s2)
+{
+	size_t	i;
 
-/* Placeholder for future core execution functions */
+	i = 0;
+	while (s1[i] && s2[i] && s1[i] == s2[i])
+		i++;
+	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+}

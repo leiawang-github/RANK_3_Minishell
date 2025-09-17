@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "executor.h"
+#include "../include/executor.h"
 
 /*
   Heredoc preprocess design:
@@ -21,7 +21,6 @@
 
 /* forward decls */
 static int  prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted);
-static void sigint_handler(int sig);
 static int  write_all(int fd, const char *buf, size_t len);
 static char *expand_heredoc_line(const char *line, char **envp, int do_expand);
 static int  heredoc_collect_loop(t_redir *redir, int write_fd, char **envp);
@@ -60,7 +59,10 @@ static int prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted)
     if (interrupted)
         *interrupted = 0;
     if (pipe(fds) < 0)
-        return (g_last_status = (ft_perror("pipe"), 1));
+    {
+        ft_errno("pipe", errno, ERR_SYS_BUILTIN);
+        return (g_last_status = 1);
+    }
 
     /* Parent: ignore Ctrl-C/Q while collecting */
     signal(SIGINT, SIG_IGN);
@@ -69,7 +71,7 @@ static int prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted)
     child = fork();
     if (child < 0)
     {
-        ft_perror("fork");
+        ft_errno("fork", errno, ERR_SYS_BUILTIN);
         close(fds[0]);
         close(fds[1]);
         return (g_last_status = 1);
@@ -91,7 +93,7 @@ static int prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted)
         int saved = errno;
         close(fds[0]);
         errno = saved;
-        return ft_perror("waitpid");
+        return ft_errno("waitpid", errno, ERR_SYS_BUILTIN);
     }
     /* Restore REPL handler semantics: SIGINT custom, SIGQUIT ignored */
     signal(SIGINT, sigint_handler);

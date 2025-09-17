@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   executor.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/15 23:00:19 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/09/16 20:39:01 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,30 +31,10 @@
 #include <readline/history.h>
 
 #include "env_copy.h"
-
-
-/* Redirection types */
-typedef enum e_redir_type {
-    R_REDIR_NONE = 0,
-    R_REDIR_IN,
-    R_REDIR_OUT,
-    R_REDIR_APPEND,
-    R_REDIR_HEREDOC
-} t_redir_type;
+#include "minishell_def.h"
 
 /* Forward decls */
-typedef struct s_redir t_redir;
 typedef struct s_cmd   t_cmd;
-
-/* Redir node */
-struct s_redir {
-    t_redir_type   redir_type;   /* which kind of redirection */
-    char          *file;         /* for <, >, >> */
-    char          *delimiter;    /* for << (after quote removal) */
-    int            do_expand;    /* heredoc: expand variables? */
-    int            fd;           /* heredoc pipe read-end (preprocessed) */
-    struct s_redir *next;
-};
 
 /* Command node */
 struct s_cmd {
@@ -64,14 +44,16 @@ struct s_cmd {
 };
 
 /* Command classification */
-typedef enum e_cmd_type {
+typedef enum e_cmd_type 
+{
     CMD_REDIR_ONLY,  /* empty command with only redirections */
     CMD_BUILTIN,
     CMD_EXTERNAL,
     CMD_INVALID
 } t_cmd_type;
 
-enum e_err {
+enum e_err 
+{
     ERR_NONE,
     ERR_SYNTAX,
     ERR_CMD_NOT_FOUND,
@@ -81,6 +63,13 @@ enum e_err {
     ERR_SIGINT, ERR_SIGQUIT
 };
 
+enum e_redir
+{
+    R_REDIR_IN,
+    R_REDIR_OUT,
+    R_REDIR_APPEND,
+    R_REDIR_HEREDOC
+};
 
 /* Global last status (provided by shell core) */
 extern int g_last_status;
@@ -94,16 +83,22 @@ int execute_command(t_cmd *pipeline, char **envp, t_env *env_list);
 
 /* Single/pipeline executors */
 int exec_redir_only(t_cmd *node);
+int exec_redirs(t_redir *redirs);
 int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list);
-int exec_single_external(t_cmd *node, char **envp);
-int exec_pipeline(t_cmd *head, char **envp);
+int exec_single_external(t_cmd *pipeline, t_env *env_list, char **envp);
+int exec_pipeline(t_cmd *head, char **envp, t_env *env_list);
+
+/* Path resolution */
+char *which_path(char *cmd_name, t_env *env_list);
 
 /* Heredoc preprocess */
 int preprocess_heredoc(t_cmd *pipeline, char **envp, int *interrupted);
 
 /* Error helper */
-int ft_errno(const char *file, int saved_errno);
-int err_msg(const char *msg);
+void error_status(enum e_err kind);
+int ft_errno(const char *file, int saved_errno, enum e_err kind);
+//int err_msg(const char *msg, enum e_err kind);
+int err_msg(const char *prefix, const char *suffix, enum e_err kind);
 
 //implementation of builtins
 int builtin_echo(char **argv);

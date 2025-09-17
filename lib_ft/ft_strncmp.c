@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_strncmp.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/23 20:26:07 by leiwang           #+#    #+#             */
-/*   Updated: 2025/06/24 19:14:12 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/09/17 16:33:50 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,13 @@ int	ft_strncmp(const char *s1, const char *s2, size_t n)
 }
 
 
-int main(void)
-{
-    char s1[] = "";
-    char s2[] = "";
+// int main(void)
+// {
+//     char s1[] = "";
+//     char s2[] = "";
 
-    printf("Strncmp original output: %d\n", strncmp(s1, s2, ft_strlen(s2)));
-    printf("Ft_strncmp output: %d\n", ft_strncmp(s1, s2, ft_strlen(s2)));
+//     printf("Strncmp original output: %d\n", strncmp(s1, s2, ft_strlen(s2)));
+//     printf("Ft_strncmp output: %d\n", ft_strncmp(s1, s2, ft_strlen(s2)));
 
-    return (0);
-}
+//     return (0);
+// }

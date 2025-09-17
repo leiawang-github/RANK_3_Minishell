@@ -60,7 +60,7 @@ int builtin_pwd(void)
         printf("%s\n", buf);
         return 0;
     }
-    ft_errno("pwd", errno); // recheck needed
+    ft_errno("pwd", errno, ERR_SYS_BUILTIN); // recheck needed
     return 1;
 }
 

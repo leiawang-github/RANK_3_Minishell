@@ -13,6 +13,10 @@
 #include "../include/executor.h"
 #include "../include/env_copy.h"
 
+/* Static function declarations */
+static char *get_env_var(t_env *env, const char *name);
+static void update_pwd(t_env *env, const char *new_path);
+
 // cd 不带参数怎么运行的？——就是不管在哪里，只要cd一下，就会回到主目录HOME：所以关键点就是利用chdir函数把cd后的路径
 //设置成在env列表中的HOME作为key值，value 作为 cd前往的路径
 
@@ -30,12 +34,12 @@ int builtin_cd(char **argv, t_env *env)
     {
         target_dir = get_env_var(env, "HOME");
         if (!target_dir || !*target_dir)
-            return err_msg("cd: HOME not set");
+            return err_msg("cd", ": HOME not set", ERR_SYS_BUILTIN);
     } 
     else 
         target_dir = argv[1]; // set second argv as the path where cd cmd shoulg go
     if (chdir(target_dir) == -1) 
-          return ft_errno("cd", errno);
+          return ft_errno("cd", errno, ERR_SYS_BUILTIN);
     newpwd = getcwd(NULL, 0); //从系统里拿出来的pwd
     if (newpwd && env) 
     {
@@ -46,7 +50,7 @@ int builtin_cd(char **argv, t_env *env)
     return 0;
 }
 
-char *get_env_var(t_env *env, const char *name) //只针对HOME情况，也就是cd后面没有参数
+static char *get_env_var(t_env *env, const char *name) //只针对HOME情况，也就是cd后面没有参数
 {
     t_env *current = env;  
     
@@ -60,7 +64,7 @@ char *get_env_var(t_env *env, const char *name) //只针对HOME情况，也就�
 }
 
 
-void update_pwd(t_env *env, const char *new_path)
+static void update_pwd(t_env *env, const char *new_path)
 {
     t_env *current = env;
     

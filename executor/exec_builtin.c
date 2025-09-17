@@ -13,6 +13,12 @@
 #include "../include/executor.h"
 #include "../include/env_copy.h"
 
+/* Static function declarations */
+static int builtin_implementation(t_cmd *pipeline, t_env *env_list);
+static int apply_redirs_parent(t_redir *r);
+static int backup_fds(int bak[3]);
+static int restore_fds(int bak[3]);
+
 int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list) //已经知道是单节点builtin, no need to fork
 {
     t_cmd *node;
@@ -58,29 +64,29 @@ static int apply_redirs_parent(t_redir *r)
         if (r->redir_type == R_REDIR_IN)
         {
             fd = open(r->file, O_RDONLY);
-            if (fd < 0) return ft_perror(r->file);
-            if (dup2(fd, STDIN_FILENO) < 0) { close(fd); return ft_perror("dup2"); }
+            if (fd < 0) return ft_errno(r->file, errno, ERR_SYS_BUILTIN);
+            if (dup2(fd, STDIN_FILENO) < 0) { close(fd); return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
             close(fd);
         }
         else if (r->redir_type == R_REDIR_OUT)
         {
             fd = open(r->file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (fd < 0) return ft_perror(r->file);
-            if (dup2(fd, STDOUT_FILENO) < 0) { close(fd); return ft_perror("dup2"); }
+            if (fd < 0) return ft_errno(r->file, errno, ERR_SYS_BUILTIN);
+            if (dup2(fd, STDOUT_FILENO) < 0) { close(fd); return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
             close(fd);
         }
         else if (r->redir_type == R_REDIR_APPEND)
         {
             fd = open(r->file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-            if (fd < 0) return ft_perror(r->file);
-            if (dup2(fd, STDOUT_FILENO) < 0) { close(fd); return ft_perror("dup2"); }
+            if (fd < 0) return ft_errno(r->file, errno, ERR_SYS_BUILTIN);
+            if (dup2(fd, STDOUT_FILENO) < 0) { close(fd); return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
             close(fd);
         }
         else if (r->redir_type == R_REDIR_HEREDOC)
         {
             if (r->fd >= 0)
             {
-                if (dup2(r->fd, STDIN_FILENO) < 0) { return ft_perror("dup2"); }
+                if (dup2(r->fd, STDIN_FILENO) < 0) { return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
                 close(r->fd);
                 r->fd = -1;
             }
@@ -105,9 +111,9 @@ int builtin_implementation(t_cmd *pipeline, t_env *env_list) //single node witho
     else if (ft_strcmp(cmd_name, "pwd") == 0)
         return builtin_pwd();
     else if (ft_strcmp(cmd_name, "export") == 0)
-        return builtin_export(node->argv, env_list);
+        return builtin_export(node->argv, &env_list);
     else if (ft_strcmp(cmd_name, "unset") == 0)
-        return builtin_unset(node->argv, env_list);
+        return builtin_unset(node->argv, &env_list);
     else if (ft_strcmp(cmd_name, "env") == 0)
         return builtin_env(node->argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
@@ -123,15 +129,15 @@ static int backup_fds(int bak[3]) //backup stdin, stdout, stderr
     bak[1] = dup(STDOUT_FILENO);
     bak[2] = dup(STDERR_FILENO);
     if (bak[0] < 0 || bak[1] < 0 || bak[2] < 0)
-        return ft_perror("dup");
+        return ft_errno("dup", errno, ERR_SYS_BUILTIN);
     return 0;
 }
 
 static int restore_fds(int bak[3])
 {
-    if (dup2(bak[0], STDIN_FILENO) < 0)  return ft_perror("dup2");
-    if (dup2(bak[1], STDOUT_FILENO) < 0) return ft_perror("dup2");
-    if (dup2(bak[2], STDERR_FILENO) < 0) return ft_perror("dup2");
+    if (dup2(bak[0], STDIN_FILENO) < 0)  return ft_errno("dup2", errno, ERR_SYS_BUILTIN);
+    if (dup2(bak[1], STDOUT_FILENO) < 0) return ft_errno("dup2", errno, ERR_SYS_BUILTIN);
+    if (dup2(bak[2], STDERR_FILENO) < 0) return ft_errno("dup2", errno, ERR_SYS_BUILTIN);
     close(bak[0]);
     close(bak[1]);
     close(bak[2]);
