@@ -44,32 +44,6 @@ int exec_redirs(t_redir *redirs)
     return 0;
 }
 
-int   exec_redir_only(t_cmd *pipeline)  //single node, only redirections
-{
-	int rc;  //means return code
-    t_redir *redir;
-    redir = pipeline->redirs;
-
-	while (redir)
-	{
-		if (redir->redir_type == R_REDIR_IN) // < 语义：把文件内容作为命令的标准输入。
-			rc = handle_in_redir(redir->file);
-		else if (redir->redir_type == R_REDIR_OUT) // > 语义：把命令的标准输出写入文件，覆盖原有内容。
-			rc = handle_out_redir(redir->file);
-		else if (redir->redir_type == R_REDIR_APPEND) // >> 语义：把命令的标准输出写入文件，追加到文件末尾。
-			rc  = handle_append_redir(redir->file);
-		else if (redir->redir_type == R_REDIR_HEREDOC) // <<
-			rc  = handle_heredoc_redir(redir);
-		if (rc < 0)
-        {
-            g_last_status = 1;  // 重定向失败
-            return (-1);
-        }
-        redir = redir->next;
-	}
-	g_last_status = 0;  // 重定向成功
-	return (0);
-}
 
 static int handle_in_redir(const char *file)
 {
@@ -119,18 +93,16 @@ static int handle_append_redir(const char *file)
 
 static int handle_heredoc_redir(t_redir *redir)
 {
-    int saved;
-
     if (!redir)
          return err_msg("heredoc", ": internal error", ERR_SYS_BUILTIN);
     if (redir->fd < 0)
         return err_msg("heredoc", ": not prepared", ERR_SYS_BUILTIN);
-    if (close(redir->fd) < 0)
+    if (dup2(redir->fd, STDIN_FILENO) == -1)
     {
-        saved = errno;
-        redir->fd = -1;
-        return ft_errno("close", saved, ERR_SYS_BUILTIN);
+        close(redir->fd);
+        return ft_errno("dup2", errno, ERR_SYS_BUILTIN);
     }
+    close(redir->fd);
     redir->fd = -1;
     return 0;
 }

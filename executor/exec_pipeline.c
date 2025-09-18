@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/16 23:03:01 by leia              #+#    #+#             */
-/*   Updated: 2025/09/17 17:11:16 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/17 23:13:20 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,9 @@
 static int count_pipeline_nodes(t_cmd *pipeline);
 static int create_pipes(int **pipes, int pipe_count);
 static void close_pipes(int **pipes, int pipe_count);
+static void connect_pipeline_io(int **pipes, int node_index, int node_count);
+static void close_unused_pipes(int **pipes, int node_index, int node_count);
+static int exec_builtin_in_pipeline(t_cmd *cmd, t_env *env_list);
 static int execute_pipeline_node(t_cmd *cmd, int **pipes, int node_index, 
                                 int node_count, t_env *env_list, char **envp);
 static int wait_for_all_children(pid_t *pids, int node_count);
@@ -24,17 +27,14 @@ static int wait_for_all_children(pid_t *pids, int node_count);
 int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
 {
     int node_count;
-    int **pipes;
-    pid_t *pids;
+    int **pipes; // array of pipes
+    pid_t *pids; // array of child PIDs
     t_cmd *current;
     int i;
-    int last_exit_status;
 
-    if (!pipeline || !pipeline->next)
-        return -1; // 不是 pipeline
-    node_count = count_pipeline_nodes(pipeline);
-    if (node_count < 2)
-        return -1; 
+    if (!pipeline)
+        return -1; // 防御性检查
+    node_count = count_pipeline_nodes(pipeline); // 计算管道节点数，一定大于1
     pipes = malloc(sizeof(int*) * (node_count - 1));
     if (!pipes)
         return -1;
@@ -43,7 +43,7 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
         free(pipes);
         return -1;
     }
-    pids = malloc(sizeof(pid_t) * node_count);
+    pids = malloc(sizeof(pid_t) * node_count); // 存储每个子进程的PID
     if (!pids)
     {
         close_pipes(pipes, node_count - 1);
@@ -52,9 +52,9 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
     }
     current = pipeline;
     i = 0;
-    while (current && i < node_count)
+    while (current && i < node_count) // 对每个节点创建子进程
     {
-        pids[i] = fork();
+        pids[i] = fork(); // 创建子进程
         if (pids[i] == 0) // 子进程：执行当前节点
         {
             execute_pipeline_node(current, pipes, i, node_count, env_list, envp);
@@ -73,10 +73,9 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
     }
     close_pipes(pipes, node_count - 1);
     free(pipes);
-    last_exit_status = wait_for_all_children(pids, node_count);
+    wait_for_all_children(pids, node_count);
     free(pids);
-
-    return last_exit_status;
+    return g_last_status;
 }
 
 static int count_pipeline_nodes(t_cmd *pipeline)
@@ -140,44 +139,37 @@ static void close_pipes(int **pipes, int pipe_count)
     }
 }
 
-static int execute_pipeline_node(t_cmd *cmd, int **pipes, int node_index, 
-                                int node_count, t_env *env_list, char **envp)
+static void connect_pipeline_io(int **pipes, int node_index, int node_count)
 {
-    int i;
-    t_cmd_type cmd_type;
-
-    // 1. 设置管道连接
-    // 第一个节点：只连接输出到下一个节点
-    if (node_index == 0)
+    if (node_index == 0) // 第一个节点
     {
-        if (node_count > 1)
-        {
-            dup2(pipes[0][1], STDOUT_FILENO);
-            close(pipes[0][0]);
-            close(pipes[0][1]);
-        }
+        dup2(pipes[0][1], STDOUT_FILENO);
+        close(pipes[0][0]);
+        close(pipes[0][1]);
     }
-    // 最后一个节点：只连接输入从前一个节点
-    else if (node_index == node_count - 1)
+    else if (node_index == node_count - 1) // 最后一个节点
     {
         dup2(pipes[node_index - 1][0], STDIN_FILENO);
         close(pipes[node_index - 1][0]);
         close(pipes[node_index - 1][1]);
     }
-    // 中间节点：连接输入和输出
-    else
+    else // 中间节点
     {
-        dup2(pipes[node_index - 1][0], STDIN_FILENO);
+        dup2(pipes[node_index - 1][0], STDIN_FILENO); 
         dup2(pipes[node_index][1], STDOUT_FILENO);
-        close(pipes[node_index - 1][0]);
-        close(pipes[node_index - 1][1]);
-        close(pipes[node_index][0]);
+        close(pipes[node_index - 1][0]); 
+        close(pipes[node_index - 1][1]); 
+        close(pipes[node_index][0]); 
         close(pipes[node_index][1]);
     }
+}
 
-    // 关闭所有其他管道（避免阻塞）
+static void close_unused_pipes(int **pipes, int node_index, int node_count)
+{
+    int i;
+
     i = 0;
-    while (i < node_count - 1)
+    while (i < node_count - 1) // 关闭未使用的管道端口
     {
         if (i != node_index - 1 && i != node_index)
         {
@@ -186,18 +178,21 @@ static int execute_pipeline_node(t_cmd *cmd, int **pipes, int node_index,
         }
         i++;
     }
+}
 
-    // 2. 应用重定向（在子进程中）
+static int execute_pipeline_node(t_cmd *cmd, int **pipes, int node_index, 
+                                int node_count, t_env *env_list, char **envp)
+{
+    t_cmd_type cmd_type;
+    connect_pipeline_io(pipes, node_index, node_count);
+    close_unused_pipes(pipes, node_index, node_count);
     if (exec_redirs(cmd->redirs) != 0)
         exit(1);
-
-    // 3. 执行命令
     cmd_type = analyze_cmd(cmd);
-    
     if (cmd_type == CMD_BUILTIN)
     {
-        // 内建命令在子进程中执行
-        exit(exec_builtin_in_single_cmd(cmd, env_list));
+        // Pipeline 中的内建命令：在子进程中执行，不影响父进程环境
+        exit(exec_builtin_in_pipeline(cmd, env_list));
     }
     else if (cmd_type == CMD_EXTERNAL)
     {
@@ -225,9 +220,7 @@ static int wait_for_all_children(pid_t *pids, int node_count)
 {
     int i;
     int status;
-    int last_exit_status;
 
-    last_exit_status = 0;
     i = 0;
     while (i < node_count)
     {
@@ -239,13 +232,37 @@ static int wait_for_all_children(pid_t *pids, int node_count)
         
         // 记录最后一个命令的退出状态（bash 行为）
         if (i == node_count - 1)
-        {
-            last_exit_status = WEXITSTATUS(status);
-            g_last_status = last_exit_status;  // 设置全局状态
-        }
+            g_last_status = WEXITSTATUS(status);
         
         i++;
     }
     
-    return last_exit_status;
+    return g_last_status;
+}
+
+static int exec_builtin_in_pipeline(t_cmd *cmd, t_env *env_list)
+{
+    char *cmd_name;
+
+    if (!cmd || !cmd->argv || !cmd->argv[0])
+        return 1;
+    
+    cmd_name = cmd->argv[0];
+    
+    if (ft_strcmp(cmd_name, "echo") == 0)
+        return builtin_echo(cmd->argv);
+    else if (ft_strcmp(cmd_name, "cd") == 0)
+        return builtin_cd(cmd->argv, env_list);
+    else if (ft_strcmp(cmd_name, "pwd") == 0)
+        return builtin_pwd();
+    else if (ft_strcmp(cmd_name, "export") == 0)
+        return builtin_export(cmd->argv, &env_list);
+    else if (ft_strcmp(cmd_name, "unset") == 0)
+        return builtin_unset(cmd->argv, &env_list);
+    else if (ft_strcmp(cmd_name, "env") == 0)
+        return builtin_env(cmd->argv, env_list);
+    else if (ft_strcmp(cmd_name, "exit") == 0)
+        return builtin_exit(cmd->argv);
+    
+    return 127; // Not a recognized builtin
 }

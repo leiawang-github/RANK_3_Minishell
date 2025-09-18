@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+         #
+#    By: leia <leia@student.42.fr>                  +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/26 21:11:41 by leiwang           #+#    #+#              #
-#    Updated: 2025/06/26 21:11:42 by leiwang          ###   ########.fr        #
+#    Updated: 2025/09/17 17:20:07 by leia             ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,7 +21,6 @@ EXECUTOR_SRCS := \
     executor/analyze_cmd.c \
     executor/exec_redirs.c \
     executor/exec_builtin.c \
-    executor/exec_core.c \
     executor/ft_error.c \
     executor/preprocess_heredoc.c
 

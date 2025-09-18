@@ -82,7 +82,6 @@ t_cmd_type analyze_cmd(t_cmd *cmd);
 int execute_command(t_cmd *pipeline, char **envp, t_env *env_list);
 
 /* Single/pipeline executors */
-int exec_redir_only(t_cmd *node);
 int exec_redirs(t_redir *redirs);
 int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list);
 int exec_single_external(t_cmd *pipeline, t_env *env_list, char **envp);

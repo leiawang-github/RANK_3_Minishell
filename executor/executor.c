@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/16 20:39:08 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/17 17:23:14 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,17 @@ int execute_command(t_cmd *pipeline, char **envp, t_env *env_list)
     {
         cmd_type = analyze_cmd(pipeline);
         if (cmd_type == CMD_REDIR_ONLY)
-            return exec_redir_only(pipeline);
+        {
+            // 只有重定向没有命令，忽略重定向
+            g_last_status = 0;
+            return 0;
+        }
         if (cmd_type == CMD_BUILTIN)
             return  exec_builtin_in_single_cmd(pipeline, env_list);
         if (cmd_type == CMD_EXTERNAL)
             return exec_single_external(pipeline, env_list, envp);
         return 127;
     }
-    /* pipeline */
     return exec_pipeline(pipeline, envp, env_list);
 }
 
