@@ -12,7 +12,7 @@
 //     while (fgets(buffer, sizeof(buffer), fp)) 
 //     {
 //         printf("fopen read: %s", buffer);
-//     }
+//     }    
 //     fclose(fp);  // 关闭文件
 //     return 0;
 // }

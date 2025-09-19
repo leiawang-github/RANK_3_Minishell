@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/16 23:03:01 by leia              #+#    #+#             */
-/*   Updated: 2025/09/18 16:50:40 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/19 15:48:29 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
     int i;
 
     node_count = count_pipeline_nodes(pipeline); // 计算管道节点数，一定大于1
-    pipes = create_pipes(node_count - 1);
+    pipes = create_pipes(node_count - 1); // 创建所需的管道array
     if (!pipes)
         return -1; // g_last_status 已在 create_pipes 中设置
     pids = malloc(sizeof(pid_t) * node_count); // 存储每个子进程的PID
@@ -52,7 +52,8 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
         pids[i] = fork(); // 创建子进程
         if (pids[i] == 0) // 子进程：执行当前节点
         {
-            t_shell shell = {
+            t_shell shell = 
+            {
                 .pipes = pipes,
                 .node_index = i,
                 .node_count = node_count,
@@ -136,7 +137,7 @@ static void close_pipes(int **pipes, int pipe_count)
     }
 }
 
-static void connect_pipeline_io(t_shell *shell)
+static void connect_pipeline(t_shell *shell)
 {
     if (shell->node_index == 0) // 第一个节点
     {
@@ -181,7 +182,7 @@ static int execute_pipeline_node(t_cmd *cmd, t_shell *shell)
 {
     t_cmd_type cmd_type;
     
-    connect_pipeline_io(shell);
+    connect_pipeline(shell);
     close_unused_pipes(shell);
     if (exec_redirs(cmd->redirs) != 0)
         exit(1);
@@ -250,13 +251,22 @@ static int exec_builtin_in_pipeline(t_cmd *cmd, t_env *env_list)
     if (ft_strcmp(cmd_name, "echo") == 0)
         return builtin_echo(cmd->argv);
     else if (ft_strcmp(cmd_name, "cd") == 0)
+    {
+        // Pipeline 中的 cd：在子进程中执行，不影响父进程工作目录
         return builtin_cd(cmd->argv, env_list);
+    }
     else if (ft_strcmp(cmd_name, "pwd") == 0)
         return builtin_pwd();
     else if (ft_strcmp(cmd_name, "export") == 0)
+    {
+        // Pipeline 中的 export：在子进程中执行，不影响父进程环境
         return builtin_export(cmd->argv, &env_list);
+    }
     else if (ft_strcmp(cmd_name, "unset") == 0)
+    {
+        // Pipeline 中的 unset：在子进程中执行，不影响父进程环境
         return builtin_unset(cmd->argv, &env_list);
+    }
     else if (ft_strcmp(cmd_name, "env") == 0)
         return builtin_env(cmd->argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
