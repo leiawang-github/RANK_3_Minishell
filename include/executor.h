@@ -52,6 +52,16 @@ typedef enum e_cmd_type
     CMD_INVALID
 } t_cmd_type;
 
+/* Shell execution context */
+typedef struct s_shell
+{
+    int **pipes;        /* Array of pipes for pipeline communication */
+    int node_index;     /* Current node index in pipeline */
+    int node_count;     /* Total number of nodes in pipeline */
+    t_env *env_list;    /* Environment variable list */
+    char **envp;        /* Environment variable array for execve */
+} t_shell;
+
 enum e_err 
 {
     ERR_NONE,
