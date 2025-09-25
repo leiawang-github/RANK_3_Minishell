@@ -73,13 +73,7 @@ enum e_err
     ERR_SIGINT, ERR_SIGQUIT
 };
 
-enum e_redir
-{
-    R_REDIR_IN,
-    R_REDIR_OUT,
-    R_REDIR_APPEND,
-    R_REDIR_HEREDOC
-};
+// Redirection types are now defined in minishell_def.h as t_redir_type
 
 /* Global last status (provided by shell core) */
 extern int g_last_status;

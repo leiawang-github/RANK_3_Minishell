@@ -41,9 +41,17 @@ typedef struct s_token
 }				t_token;
 
 //parsing
+typedef enum e_redir_type
+{
+    R_REDIR_IN,
+    R_REDIR_OUT,
+    R_REDIR_APPEND,
+    R_REDIR_HEREDOC
+} t_redir_type;
+
 typedef struct	s_redir
 {
-    t_token_type	redir_type;   // which kind of redirection
+    t_redir_type	redir_type;   // which kind of redirection
     char			*file; // file path or heredoc delimiter
     char			*delimiter;// this is the char* after remove quotes(either single or double),ex: "EOF" -> EOF
 	int				do_expand; // only for heredoc one case: if delimiter is quoted, do_expand = 0;

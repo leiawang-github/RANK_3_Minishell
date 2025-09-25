@@ -6,7 +6,7 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/16 23:03:01 by leia              #+#    #+#             */
-/*   Updated: 2025/09/19 15:48:29 by leia             ###   ########.fr       */
+/*   Updated: 2025/09/23 22:31:15 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ static void cleanup_pipes(int **pipes, int count);
 static void cleanup_and_free_pipes(int **pipes, int count);
 static int **create_pipes(int pipe_count);
 static void close_pipes(int **pipes, int pipe_count);
-static void connect_pipeline_io(t_shell *shell);
+static void connect_pipeline(t_shell *shell);
 static void close_unused_pipes(t_shell *shell);
 static int exec_builtin_in_pipeline(t_cmd *cmd, t_env *env_list);
 static int execute_pipeline_node(t_cmd *cmd, t_shell *shell);
@@ -32,6 +32,10 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
     pid_t *pids; // array of child PIDs
     t_cmd *current;
     int i;
+    
+    // 设置信号处理，忽略 SIGINT 和 SIGQUIT 在父进程中
+    signal(SIGINT, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
 
     node_count = count_pipeline_nodes(pipeline); // 计算管道节点数，一定大于1
     pipes = create_pipes(node_count - 1); // 创建所需的管道array
@@ -52,6 +56,10 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
         pids[i] = fork(); // 创建子进程
         if (pids[i] == 0) // 子进程：执行当前节点
         {
+            // 子进程中恢复默认信号处理
+            signal(SIGINT, SIG_DFL);
+            signal(SIGQUIT, SIG_DFL);
+            
             t_shell shell = 
             {
                 .pipes = pipes,
@@ -61,7 +69,7 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
                 .envp = envp
             };
             execute_pipeline_node(current, &shell);
-            exit(1); // 不应该到达这里
+            exit(g_last_status); // 不应该到达这里，使用正确的退出码
         }
         else if (pids[i] < 0)
         {
@@ -78,6 +86,11 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
     free(pipes);
     wait_for_all_children(pids, node_count);
     free(pids);
+    
+    // 恢复默认信号处理
+    signal(SIGINT, sigint_handler);
+    signal(SIGQUIT, SIG_DFL);
+    
     return g_last_status;
 }
 
@@ -169,6 +182,7 @@ static void close_unused_pipes(t_shell *shell)
     i = 0;
     while (i < shell->node_count - 1) // 关闭未使用的管道端口
     {
+        // 关闭当前节点不需要的管道
         if (i != shell->node_index - 1 && i != shell->node_index)
         {
             close(shell->pipes[i][0]);
@@ -185,7 +199,7 @@ static int execute_pipeline_node(t_cmd *cmd, t_shell *shell)
     connect_pipeline(shell);
     close_unused_pipes(shell);
     if (exec_redirs(cmd->redirs) != 0)
-        exit(1);
+        exit(g_last_status);
     
     cmd_type = analyze_cmd(cmd);
     if (cmd_type == CMD_BUILTIN)
@@ -210,8 +224,8 @@ static int execute_pipeline_node(t_cmd *cmd, t_shell *shell)
     }
     else
     {
-        // 其他类型（如重定向错误）
-        exit(1);
+        // 其他类型（如无效命令）
+        exit(127);
     }
 }
 
