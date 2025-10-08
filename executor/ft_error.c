@@ -47,8 +47,11 @@ extern int errno;  // 全局错误号变量
 int ft_errno(const char *file, int saved_errno, enum e_err kind) 
 {
     write(2, "minishell: ", 11);
-    errno = saved_errno;
-    perror(file);
+    // 不修改全局errno，使用perror的替代实现
+    write(2, file, ft_strlen(file));
+    write(2, ": ", 2);
+    write(2, strerror(saved_errno), ft_strlen(strerror(saved_errno)));
+    write(2, "\n", 1);
 
     error_status(kind);
     return -1;

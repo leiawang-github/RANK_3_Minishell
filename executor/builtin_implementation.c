@@ -10,9 +10,10 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/minishell.h"
-#include "../include/env_copy.h"
 #include "../include/executor.h"
+#include "../include/minishell.h"
+
+static int is_n_option(const char *n_option);
 
 int builtin_echo(char **argv)
 {

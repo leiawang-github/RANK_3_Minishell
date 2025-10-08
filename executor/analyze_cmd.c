@@ -11,12 +11,13 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
+#include "../include/minishell.h"
 
-static int is_builtin(t_cmd *pipeline)
+static int is_builtin(t_mini *pipeline)
 {
     const char *cmd_name;
     
-    cmd_name = pipeline->argv[0];
+    cmd_name = pipeline->cmd_argv[0];
     
     return (ft_strcmp(cmd_name, "echo") == 0 ||
             ft_strcmp(cmd_name, "cd") == 0 ||
@@ -27,11 +28,11 @@ static int is_builtin(t_cmd *pipeline)
             ft_strcmp(cmd_name, "export") == 0);
 }
 
-t_cmd_type analyze_cmd(t_cmd *pipeline) 
+t_cmd_type analyze_cmd(t_mini *pipeline) 
 {
     if(!pipeline)
         return CMD_INVALID;
-    if (!pipeline->argv || !pipeline->argv[0]) 
+    if (!pipeline->cmd_argv || !pipeline->cmd_argv[0]) 
     {
         if(pipeline->redirs)
             return CMD_REDIR_ONLY; 

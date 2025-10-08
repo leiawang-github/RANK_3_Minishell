@@ -11,7 +11,16 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
-#include "../include/env_copy.h"
+#include "../include/minishell.h"
+
+/* Function declarations */
+static int show_all_exported_vars(t_env *env_list);
+static t_env **convert_list_to_array(t_env *env_list);
+static void sort_env_array(t_env **nodes, int count);
+static int process_export_arg(const char *arg, t_env **env_list);
+static int validate_and_set_var(const char *arg, t_env **env_list);
+static t_env *find_env_var(t_env *env_list, const char *name);
+static void add_or_update_env_var(t_env **env_list, const char *name, const char *value);
 
 /*
 参数处理：区分 VAR=value 和 VAR
@@ -36,7 +45,7 @@ int builtin_export(char **argv, t_env **env_list)
         argc++;
 
     if (argc == 1)
-        return show_all_exported_vars(env_list);
+        return show_all_exported_vars(*env_list);
     while (i < argc) {
         if (argv[i][0] == '-' && argv[i][1] != '\0')
         {
@@ -78,16 +87,21 @@ static int show_all_exported_vars(t_env *env_list)
     return 0;
 }
 
-static  char **convert_list_to_array(t_env *env_list)
+static t_env **convert_list_to_array(t_env *env_list)
 {
     t_env *current;
     int count;
 
     current = env_list;
-    count = ft_lstsize(current);
+    count = 0;
+    while (current)
+    {
+        count++;
+        current = current->next;
+    }
     if (count == 0)
         return NULL;
-    char **array = malloc((count + 1) * sizeof(char*));
+    t_env **array = malloc((count + 1) * sizeof(t_env*));
     if (!array)
         return NULL;
     current = env_list;
@@ -122,5 +136,102 @@ static void sort_env_array(t_env **nodes, int count)
             j++;
         }
         i++;
+    }
+}
+
+static int process_export_arg(const char *arg, t_env **env_list)
+{
+    const char *equal_pos;
+    
+    if (!arg || !*arg)
+        return 0;
+    
+    equal_pos = ft_strchr(arg, '=');
+    if (equal_pos)
+    {
+        // VAR=value 格式
+        return validate_and_set_var(arg, env_list);
+    }
+    else
+    {
+        // VAR 格式 - 只是标记为exported，不改变值
+        if (!is_valid_var_name(arg))
+        {
+            err_msg("export", ": not a valid identifier", ERR_SYS_BUILTIN);
+            return 1;
+        }
+        // 如果变量不存在，创建它
+        if (!find_env_var(*env_list, arg))
+        {
+            add_or_update_env_var(env_list, arg, "");
+        }
+        return 0;
+    }
+}
+
+static int validate_and_set_var(const char *arg, t_env **env_list)
+{
+    const char *equal_pos;
+    char *name;
+    char *value;
+    int name_len;
+    
+    equal_pos = ft_strchr(arg, '=');
+    if (!equal_pos)
+        return 1;
+    
+    name_len = equal_pos - arg;
+    name = ft_substr(arg, 0, name_len);
+    if (!name)
+        return 1;
+    
+    if (!is_valid_var_name(name))
+    {
+        free(name);
+        err_msg("export", ": not a valid identifier", ERR_SYS_BUILTIN);
+        return 1;
+    }
+    
+    value = ft_strdup(equal_pos + 1);
+    if (!value)
+    {
+        free(name);
+        return 1;
+    }
+    
+    add_or_update_env_var(env_list, name, value);
+    free(name);
+    free(value);
+    return 0;
+}
+
+static t_env *find_env_var(t_env *env_list, const char *name)
+{
+    while (env_list)
+    {
+        if (ft_strcmp(env_list->name, name) == 0)
+            return env_list;
+        env_list = env_list->next;
+    }
+    return NULL;
+}
+
+static void add_or_update_env_var(t_env **env_list, const char *name, const char *value)
+{
+    t_env *existing;
+    
+    existing = find_env_var(*env_list, name);
+    if (existing)
+    {
+        // 更新现有变量
+        free(existing->value);
+        existing->value = ft_strdup(value);
+    }
+    else
+    {
+        // 添加新变量
+        t_env *new_var = env_lstnew(ft_strdup(name), ft_strdup(value));
+        if (new_var)
+            env_lstadd_back(env_list, new_var);
     }
 }

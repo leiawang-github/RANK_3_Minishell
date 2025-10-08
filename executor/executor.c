@@ -6,13 +6,13 @@
 /*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/17 17:23:14 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/07 17:41:56 by leia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 
-int execute_command(t_cmd *pipeline, char **envp, t_env *env_list)
+int execute_command(t_mini *pipeline, char **envp, t_env *env_list)
 {
     int rc;
     int interrupted;
@@ -22,7 +22,7 @@ int execute_command(t_cmd *pipeline, char **envp, t_env *env_list)
     interrupted = 0;
     rc = preprocess_heredoc(pipeline, envp, &interrupted);
     if (rc != 0)
-        return rc; /* 130 if interrupted, else error */
+        return rc;
     if (!pipeline)
         return 0;
     if (!pipeline->next) //单节点
@@ -30,7 +30,13 @@ int execute_command(t_cmd *pipeline, char **envp, t_env *env_list)
         cmd_type = analyze_cmd(pipeline);
         if (cmd_type == CMD_REDIR_ONLY)
         {
-            // 只有重定向没有命令，忽略重定向
+            int rc_redir;
+            rc_redir = probe_redirs(pipeline->redirs);
+            if (rc_redir < 0)
+            {
+                g_last_status = 1;
+                return 1;
+            }
             g_last_status = 0;
             return 0;
         }

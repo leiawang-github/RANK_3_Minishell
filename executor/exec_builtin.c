@@ -11,17 +11,17 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
-#include "../include/env_copy.h"
+#include "../include/minishell.h"
 
 /* Static function declarations */
-static int builtin_implementation(t_cmd *pipeline, t_env *env_list);
+static int builtin_implementation(t_mini *pipeline, t_env *env_list);
 static int apply_redirs_parent(t_redir *r);
 static int backup_fds(int bak[3]);
 static int restore_fds(int bak[3]);
 
-int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list) //已经知道是单节点builtin, no need to fork
+int exec_builtin_in_single_cmd(t_mini *pipeline, t_env *env_list) //已经知道是单节点builtin, no need to fork
 {
-    t_cmd *node;
+    t_mini *node;
     int rc; // return code as side effect
     int bak[3];
 
@@ -61,28 +61,28 @@ static int apply_redirs_parent(t_redir *r)
     int fd;
     while (r)
     {
-        if (r->redir_type == R_REDIR_IN)
+        if (r->redir_type == IN)
         {
             fd = open(r->file, O_RDONLY);
             if (fd < 0) return ft_errno(r->file, errno, ERR_SYS_BUILTIN);
             if (dup2(fd, STDIN_FILENO) < 0) { close(fd); return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
             close(fd);
         }
-        else if (r->redir_type == R_REDIR_OUT)
+        else if (r->redir_type == OUT)
         {
             fd = open(r->file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (fd < 0) return ft_errno(r->file, errno, ERR_SYS_BUILTIN);
             if (dup2(fd, STDOUT_FILENO) < 0) { close(fd); return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
             close(fd);
         }
-        else if (r->redir_type == R_REDIR_APPEND)
+        else if (r->redir_type == APPEND)
         {
             fd = open(r->file, O_WRONLY | O_CREAT | O_APPEND, 0644);
             if (fd < 0) return ft_errno(r->file, errno, ERR_SYS_BUILTIN);
             if (dup2(fd, STDOUT_FILENO) < 0) { close(fd); return ft_errno("dup2", errno, ERR_SYS_BUILTIN); }
             close(fd);
         }
-        else if (r->redir_type == R_REDIR_HEREDOC)
+        else if (r->redir_type == HEREDOC)
         {
             if (r->fd >= 0)
             {
@@ -96,28 +96,28 @@ static int apply_redirs_parent(t_redir *r)
     return 0;
 }
 
-int builtin_implementation(t_cmd *pipeline, t_env *env_list) //single node without redirection
+int builtin_implementation(t_mini *pipeline, t_env *env_list) //single node without redirection
 {
-    t_cmd *node;
+    t_mini *node;
 
     char *cmd_name;
     node = pipeline;
-    cmd_name = node->argv[0];
+    cmd_name = node->cmd_argv[0];
 
     if (ft_strcmp(cmd_name, "echo") == 0)
-            return builtin_echo(node->argv);
+            return builtin_echo(node->cmd_argv);
     else if (ft_strcmp(cmd_name, "cd") == 0)
-        return builtin_cd(node->argv, env_list);
+        return builtin_cd(node->cmd_argv, env_list);
     else if (ft_strcmp(cmd_name, "pwd") == 0)
         return builtin_pwd();
     else if (ft_strcmp(cmd_name, "export") == 0)
-        return builtin_export(node->argv, &env_list);
+        return builtin_export(node->cmd_argv, &env_list);
     else if (ft_strcmp(cmd_name, "unset") == 0)
-        return builtin_unset(node->argv, &env_list);
+        return builtin_unset(node->cmd_argv, &env_list);
     else if (ft_strcmp(cmd_name, "env") == 0)
-        return builtin_env(node->argv, env_list);
+        return builtin_env(node->cmd_argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
-        return builtin_exit(node->argv);
+        return builtin_exit(node->cmd_argv);
     return 127; // Not a recognized builtin
 
 }

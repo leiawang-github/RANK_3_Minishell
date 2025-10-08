@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   minishell_def.h                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/08/02 18:47:29 by rtiberio          #+#    #+#             */
+/*   Updated: 2025/10/06 13:49:42 by leia             ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef MINISHELL_DEF_H
 # define MINISHELL_DEF_H
 
@@ -8,9 +20,10 @@
 # include <limits.h>
 # include <readline/readline.h>
 # include <readline/history.h>
+# include <fcntl.h>
 # include <unistd.h>
 # include <stdbool.h>
-# include "libft.h"
+# include "../libft/libft.h"
 
 //env_copy
 typedef struct s_env
@@ -19,6 +32,19 @@ typedef struct s_env
 	char			*value;
 	struct s_env	*next;
 }				t_env;
+
+typedef struct	s_shell
+{
+	/* Pipeline execution fields */
+	int **pipes;        /* Array of pipes for pipeline communication */
+	int node_index;     /* Current node index in pipeline */
+	int node_count;     /* Total number of nodes in pipeline */
+	
+	/* Environment management */
+	t_env *env_list;   /* Environment variable list (exported variables) */
+	t_env *vars;       /* Internal variables (not exported) */
+	char **envp;       /* Environment variable array for execve */
+}				t_shell;
 
 //lexer
 typedef enum e_token_type
@@ -34,24 +60,25 @@ typedef enum e_token_type
 
 typedef struct s_token
 {
-	char				*value;
-	t_token_type		type;
-	struct s_token		*prev;
-	struct s_token		*next;
+	char			*value;
+	t_token_type	type;
+	struct s_token	*prev;
+	struct s_token	*next;
 }				t_token;
 
-//parsing
-typedef enum e_redir_type
+typedef struct s_varexp
 {
-    R_REDIR_IN,
-    R_REDIR_OUT,
-    R_REDIR_APPEND,
-    R_REDIR_HEREDOC
-} t_redir_type;
+	int				num_subs;
+	char			**subs;
+	int				*i_src;
+	int				len_new_str;
+	char			*new_str;
+}				t_varexp;
 
+//parsing
 typedef struct	s_redir
 {
-    t_redir_type	redir_type;   // which kind of redirection
+    t_token_type	redir_type;   // which kind of redirection
     char			*file; // file path or heredoc delimiter
     char			*delimiter;// this is the char* after remove quotes(either single or double),ex: "EOF" -> EOF
 	int				do_expand; // only for heredoc one case: if delimiter is quoted, do_expand = 0;

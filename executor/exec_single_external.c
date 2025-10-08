@@ -11,10 +11,14 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
-#include "../include/env_copy.h"
+#include "../include/minishell.h"
+
+/* Function declarations */
+static char *search_in_path(const char *cmd, t_env *env_list);
+static int check_executable(const char *path, int verbose);
 
 /*
-逻辑：单节点命令的最后一种形式，形如“hey” 或者 “ls -l” 或者 ls -a >out.md"之类的
+逻辑：单节点命令的最后一种形式，形如"hey" 或者 "ls -l" 或者 ls -a >out.md"之类的
 就是排除了单节点只有重定向，单节点内建命令、无效argv的情况后剩下的情况
 实现的核心功能
 主函数 exec_single_external()：
@@ -41,23 +45,31 @@ PATH环境变量搜索 search_in_path()：
 用于解析 PATH 环境变量
 */
 
-int exec_single_external(t_cmd *pipeline, t_env *env_list, char **envp)
+int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
 {
     char *path;
     pid_t pid;
     int status; //：存储子进程退出状态的变量地址
+    char **current_envp; // 使用当前环境变量
     
-    path = which_path(pipeline->argv[0], env_list); 
+    // 将t_env转换为char**数组
+    current_envp = env_to_array(env_list);
+    if (!current_envp)
+        current_envp = envp; // 如果转换失败，使用原始envp
+    
+    path = which_path(pipeline->cmd_argv[0], env_list); 
     if (!path) 
     {
-        err_msg(pipeline->argv[0], ": command not found", ERR_CMD_NOT_FOUND);
+        err_msg(pipeline->cmd_argv[0], ": command not found", ERR_CMD_NOT_FOUND);
+        if (current_envp != envp)
+            free_env_array(current_envp);
         return -1;
     }
     pid = fork();
-    if (pid == 0) //  child process
+    if (pid == 0) //  child process
     {
-        execve(path, pipeline->argv, envp);
-        ft_errno(pipeline->argv[0], errno, ERR_CANNOT_EXEC);
+        execve(path, pipeline->cmd_argv, current_envp);
+        ft_errno(pipeline->cmd_argv[0], errno, ERR_CANNOT_EXEC);
         exit(126); // execve failed
     } 
     else if (pid > 0) // parent process
@@ -65,19 +77,23 @@ int exec_single_external(t_cmd *pipeline, t_env *env_list, char **envp)
         while (waitpid(pid, &status, 0) == -1)
             if (errno != EINTR) break;
         free(path);
+        if (current_envp != envp)
+            free_env_array(current_envp);
         g_last_status = WEXITSTATUS(status);  // 设置全局状态
         return WEXITSTATUS(status);
     } 
     else
     {
         free(path);
+        if (current_envp != envp)
+            free_env_array(current_envp);
         ft_errno("fork", errno, ERR_SYS_BUILTIN);
         return -1;
     }
 }
 
 
-static char *which_path(char *cmd_name, t_env *env_list)  // return value itself is the path to be executed
+char *which_path(char *cmd_name, t_env *env_list)  // return value itself is the path to be executed
 {
 	char *path;
 	

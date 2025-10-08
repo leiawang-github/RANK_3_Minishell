@@ -10,15 +10,18 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/env_copy.h"
 #include "../include/executor.h"
+#include "../include/minishell.h"
+
+static void print_name_value(const char *name, const char *value);
+static int  env_arg_error(const char *arg);
 
 int builtin_env(char **argv, t_env *env_list)
 {
     t_env *cur;
 
     if (argv && argv[1] != NULL)
-        return env_arg_error(argv);
+        return env_arg_error(argv[1]);
 
     cur = env_list;
     while (cur)

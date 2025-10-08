@@ -11,26 +11,26 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
-#include "../include/env_copy.h"
+#include "../include/minishell.h"
 
 /* Static function declarations */
-static int count_pipeline_nodes(t_cmd *pipeline);
+static int count_pipeline_nodes(t_mini *pipeline);
 static void cleanup_pipes(int **pipes, int count);
 static void cleanup_and_free_pipes(int **pipes, int count);
 static int **create_pipes(int pipe_count);
 static void close_pipes(int **pipes, int pipe_count);
 static void connect_pipeline(t_shell *shell);
 static void close_unused_pipes(t_shell *shell);
-static int exec_builtin_in_pipeline(t_cmd *cmd, t_env *env_list);
-static int execute_pipeline_node(t_cmd *cmd, t_shell *shell);
+static int exec_builtin_in_pipeline(t_mini *cmd, t_env *env_list);
+static int execute_pipeline_node(t_mini *cmd, t_shell *shell);
 static int wait_for_all_children(pid_t *pids, int node_count);
 
-int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
+int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
 {
     int node_count;
     int **pipes; // array of pipes
     pid_t *pids; // array of child PIDs
-    t_cmd *current;
+    t_mini *current;
     int i;
     
     // 设置信号处理，忽略 SIGINT 和 SIGQUIT 在父进程中
@@ -94,10 +94,10 @@ int exec_pipeline(t_cmd *pipeline, char **envp, t_env *env_list)
     return g_last_status;
 }
 
-static int count_pipeline_nodes(t_cmd *pipeline)
+static int count_pipeline_nodes(t_mini *pipeline)
 {
     int count;
-    t_cmd *current;
+    t_mini *current;
 
     count = 0;
     current = pipeline;
@@ -192,7 +192,7 @@ static void close_unused_pipes(t_shell *shell)
     }
 }
 
-static int execute_pipeline_node(t_cmd *cmd, t_shell *shell)
+static int execute_pipeline_node(t_mini *cmd, t_shell *shell)
 {
     t_cmd_type cmd_type;
     
@@ -210,15 +210,15 @@ static int execute_pipeline_node(t_cmd *cmd, t_shell *shell)
     else if (cmd_type == CMD_EXTERNAL)
     {
         // 外部命令执行
-        char *path = which_path(cmd->argv[0], shell->env_list);
+        char *path = which_path(cmd->cmd_argv[0], shell->env_list);
         if (!path)
         {
-            err_msg(cmd->argv[0], ": command not found", ERR_CMD_NOT_FOUND);
+            err_msg(cmd->cmd_argv[0], ": command not found", ERR_CMD_NOT_FOUND);
             exit(127);
         }
         
-        execve(path, cmd->argv, shell->envp);
-        ft_errno(cmd->argv[0], errno, ERR_CANNOT_EXEC);
+        execve(path, cmd->cmd_argv, shell->envp);
+        ft_errno(cmd->cmd_argv[0], errno, ERR_CANNOT_EXEC);
         free(path);
         exit(126);
     }
@@ -253,38 +253,38 @@ static int wait_for_all_children(pid_t *pids, int node_count)
     return g_last_status;
 }
 
-static int exec_builtin_in_pipeline(t_cmd *cmd, t_env *env_list)
+static int exec_builtin_in_pipeline(t_mini *cmd, t_env *env_list)
 {
     char *cmd_name;
 
-    if (!cmd || !cmd->argv || !cmd->argv[0])
+    if (!cmd || !cmd->cmd_argv || !cmd->cmd_argv[0])
         return 1;
     
-    cmd_name = cmd->argv[0];
+    cmd_name = cmd->cmd_argv[0];
     
     if (ft_strcmp(cmd_name, "echo") == 0)
-        return builtin_echo(cmd->argv);
+        return builtin_echo(cmd->cmd_argv);
     else if (ft_strcmp(cmd_name, "cd") == 0)
     {
         // Pipeline 中的 cd：在子进程中执行，不影响父进程工作目录
-        return builtin_cd(cmd->argv, env_list);
+        return builtin_cd(cmd->cmd_argv, env_list);
     }
     else if (ft_strcmp(cmd_name, "pwd") == 0)
         return builtin_pwd();
     else if (ft_strcmp(cmd_name, "export") == 0)
     {
         // Pipeline 中的 export：在子进程中执行，不影响父进程环境
-        return builtin_export(cmd->argv, &env_list);
+        return builtin_export(cmd->cmd_argv, &env_list);
     }
     else if (ft_strcmp(cmd_name, "unset") == 0)
     {
         // Pipeline 中的 unset：在子进程中执行，不影响父进程环境
-        return builtin_unset(cmd->argv, &env_list);
+        return builtin_unset(cmd->cmd_argv, &env_list);
     }
     else if (ft_strcmp(cmd_name, "env") == 0)
-        return builtin_env(cmd->argv, env_list);
+        return builtin_env(cmd->cmd_argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
-        return builtin_exit(cmd->argv);
+        return builtin_exit(cmd->cmd_argv);
     
     return 127; // Not a recognized builtin
 }

@@ -10,8 +10,10 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/execinfo.h"
-#include "../include/env_copy.h"
+#include "../include/executor.h"
+#include "../include/minishell.h"
+
+static int unset_env_var(const char *name, t_env **env_list);
 
 int builtin_unset(char **argv, t_env **env_list)
 {
@@ -37,7 +39,7 @@ int builtin_unset(char **argv, t_env **env_list)
 }
 
 
-static int is_valid_var_name(const char *name)
+int is_valid_var_name(const char *name)
 {
     int i;
 

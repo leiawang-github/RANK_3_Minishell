@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
+#include "../include/minishell.h"
 
 /*
   Heredoc preprocess design:
@@ -25,10 +26,10 @@ static int  write_all(int fd, const char *buf, size_t len);
 static char *expand_heredoc_line(const char *line, char **envp, int do_expand);
 static int  heredoc_collect_loop(t_redir *redir, int write_fd, char **envp);
 
-int preprocess_heredoc(t_cmd *pipeline, char **envp, int *interrupted)
+int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted)
 {
     int   rc;
-    t_cmd *node = pipeline;
+    t_mini *node = pipeline;
 
     if (interrupted)
         *interrupted = 0;
@@ -37,7 +38,7 @@ int preprocess_heredoc(t_cmd *pipeline, char **envp, int *interrupted)
         t_redir *r = node->redirs;
         while (r)
         {
-            if (r->redir_type == R_REDIR_HEREDOC)
+            if (r->redir_type == HEREDOC)
             {
                 rc = prepare_one_heredoc(r, envp, interrupted);
                 if (rc != 0)

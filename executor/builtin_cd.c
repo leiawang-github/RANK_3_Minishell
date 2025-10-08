@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "../include/executor.h"
-#include "../include/env_copy.h"
+#include "../include/minishell.h"
 
 /* Static function declarations */
 static char *get_env_var(t_env *env, const char *name);
@@ -70,8 +70,14 @@ static void update_pwd(t_env *env, const char *new_path)
     
     while (current) {
         if (ft_strcmp(current->name, "PWD") == 0) {
-            free(current->value);
+            if (current->value)
+                free(current->value);
             current->value = ft_strdup(new_path);
+            if (!current->value)
+            {
+                // 如果malloc失败，至少设置为空字符串
+                current->value = ft_strdup("");
+            }
             return;
         }
         current = current->next;

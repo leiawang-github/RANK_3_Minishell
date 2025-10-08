@@ -29,19 +29,10 @@
 /* Readline (used by heredoc) */
 #include <readline/readline.h>
 #include <readline/history.h>
-
-#include "env_copy.h"
 #include "minishell_def.h"
 
 /* Forward decls */
-typedef struct s_cmd   t_cmd;
-
-/* Command node */
-struct s_cmd {
-    char     **argv;   /* argv[0] is command name */
-    t_redir   *redirs; /* linked list of redirections */
-    t_cmd     *next;   /* next command in pipeline */
-};
+typedef struct s_mini   t_mini;
 
 /* Command classification */
 typedef enum e_cmd_type 
@@ -51,16 +42,6 @@ typedef enum e_cmd_type
     CMD_EXTERNAL,
     CMD_INVALID
 } t_cmd_type;
-
-/* Shell execution context */
-typedef struct s_shell
-{
-    int **pipes;        /* Array of pipes for pipeline communication */
-    int node_index;     /* Current node index in pipeline */
-    int node_count;     /* Total number of nodes in pipeline */
-    t_env *env_list;    /* Environment variable list */
-    char **envp;        /* Environment variable array for execve */
-} t_shell;
 
 enum e_err 
 {
@@ -79,23 +60,24 @@ enum e_err
 extern int g_last_status;
 
 /* Analyzer */
-t_cmd_type analyze_cmd(t_cmd *cmd);
+t_cmd_type analyze_cmd(t_mini *cmd);
 
 
 /* Pipeline dispatcher */
-int execute_command(t_cmd *pipeline, char **envp, t_env *env_list);
+int execute_command(t_mini *pipeline, char **envp, t_env *env_list);
 
 /* Single/pipeline executors */
 int exec_redirs(t_redir *redirs);
-int exec_builtin_in_single_cmd(t_cmd *pipeline, t_env *env_list);
-int exec_single_external(t_cmd *pipeline, t_env *env_list, char **envp);
-int exec_pipeline(t_cmd *head, char **envp, t_env *env_list);
+int probe_redirs(t_redir *redirs);
+int exec_builtin_in_single_cmd(t_mini *pipeline, t_env *env_list);
+int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp);
+int exec_pipeline(t_mini *head, char **envp, t_env *env_list);
 
 /* Path resolution */
 char *which_path(char *cmd_name, t_env *env_list);
 
 /* Heredoc preprocess */
-int preprocess_heredoc(t_cmd *pipeline, char **envp, int *interrupted);
+int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted);
 
 /* Error helper */
 void error_status(enum e_err kind);
@@ -114,6 +96,9 @@ int builtin_exit(char **argv);
 
 /* Signal handlers */
 void sigint_handler(int sig);
+void sigquit_handler(int sig);
+void setup_signal_handlers(void);
+void restore_signal_handlers(void);
 
 
 
@@ -121,4 +106,3 @@ int is_valid_var_name(const char *name);
 
 
 #endif
-
