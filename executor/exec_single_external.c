@@ -68,6 +68,10 @@ int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
     pid = fork();
     if (pid == 0) //  child process
     {
+        // 应用重定向（在子进程中）
+        if (exec_redirs(pipeline->redirs) != 0)
+            exit(1);
+        
         execve(path, pipeline->cmd_argv, current_envp);
         ft_errno(pipeline->cmd_argv[0], errno, ERR_CANNOT_EXEC);
         exit(126); // execve failed
@@ -75,12 +79,27 @@ int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
     else if (pid > 0) // parent process
     {
         while (waitpid(pid, &status, 0) == -1)
-            if (errno != EINTR) break;
+        {
+            if (errno != EINTR)
+            {
+                ft_errno("waitpid", errno, ERR_SYS_BUILTIN);
+                free(path);
+                if (current_envp != envp)
+                    free_env_array(current_envp);
+                return -1;
+            }
+        }
         free(path);
         if (current_envp != envp)
             free_env_array(current_envp);
-        g_last_status = WEXITSTATUS(status);  // 设置全局状态
-        return WEXITSTATUS(status);
+        
+        // 正确处理退出状态
+        if (WIFEXITED(status))
+            g_last_status = WEXITSTATUS(status);
+        else if (WIFSIGNALED(status))
+            g_last_status = 128 + WTERMSIG(status);
+        
+        return g_last_status;
     } 
     else
     {

@@ -25,6 +25,7 @@ static int  prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted);
 static int  write_all(int fd, const char *buf, size_t len);
 static char *expand_heredoc_line(const char *line, char **envp, int do_expand);
 static int  heredoc_collect_loop(t_redir *redir, int write_fd, char **envp);
+static void cleanup_heredoc_fds(t_mini *pipeline);
 
 int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted)
 {
@@ -42,7 +43,11 @@ int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted)
             {
                 rc = prepare_one_heredoc(r, envp, interrupted);
                 if (rc != 0)
+                {
+                    // 清理所有已打开的heredoc fd
+                    cleanup_heredoc_fds(pipeline);
                     return rc; /* 130 if interrupted, else error */
+                }
             }
             r = r->next;
         }
@@ -177,5 +182,28 @@ static char *expand_heredoc_line(const char *line, char **envp, int do_expand)
     if (!do_expand) 
         return (ft_strdup(line));
     return (ft_strdup(line));
+}
+
+/* 清理所有已打开的heredoc fd */
+static void cleanup_heredoc_fds(t_mini *pipeline)
+{
+    t_mini *node;
+    t_redir *r;
+
+    node = pipeline;
+    while (node)
+    {
+        r = node->redirs;
+        while (r)
+        {
+            if (r->redir_type == HEREDOC && r->fd >= 0)
+            {
+                close(r->fd);
+                r->fd = -1;
+            }
+            r = r->next;
+        }
+        node = node->next;
+    }
 }
 

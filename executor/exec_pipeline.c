@@ -24,6 +24,7 @@ static void close_unused_pipes(t_shell *shell);
 static int exec_builtin_in_pipeline(t_mini *cmd, t_env *env_list);
 static int execute_pipeline_node(t_mini *cmd, t_shell *shell);
 static int wait_for_all_children(pid_t *pids, int node_count);
+static void kill_children(pid_t *pids, int count);
 
 int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
 {
@@ -74,6 +75,10 @@ int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
         else if (pids[i] < 0)
         {
             ft_errno("fork", errno, ERR_SYS_BUILTIN);
+            // 杀死已经fork的子进程
+            kill_children(pids, i);
+            // 等待已fork的子进程
+            wait_for_all_children(pids, i);
             close_pipes(pipes, node_count - 1);
             free(pipes);
             free(pids);
@@ -87,9 +92,9 @@ int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
     wait_for_all_children(pids, node_count);
     free(pids);
     
-    // 恢复默认信号处理
+    // 恢复REPL模式的信号处理
     signal(SIGINT, sigint_handler);
-    signal(SIGQUIT, SIG_DFL);
+    signal(SIGQUIT, SIG_IGN);  // 与主循环保持一致
     
     return g_last_status;
 }
@@ -245,7 +250,12 @@ static int wait_for_all_children(pid_t *pids, int node_count)
         
         // 记录最后一个命令的退出状态（bash 行为）
         if (i == node_count - 1)
-            g_last_status = WEXITSTATUS(status);
+        {
+            if (WIFEXITED(status))
+                g_last_status = WEXITSTATUS(status);
+            else if (WIFSIGNALED(status))
+                g_last_status = 128 + WTERMSIG(status);
+        }
         
         i++;
     }
@@ -302,4 +312,18 @@ static void cleanup_and_free_pipes(int **pipes, int count)
 {
     cleanup_pipes(pipes, count);
     free(pipes);
+}
+
+/* 发送SIGTERM到所有已fork的子进程 */
+static void kill_children(pid_t *pids, int count)
+{
+    int i;
+
+    i = 0;
+    while (i < count)
+    {
+        if (pids[i] > 0)
+            kill(pids[i], SIGTERM);
+        i++;
+    }
 }

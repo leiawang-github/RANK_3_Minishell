@@ -40,4 +40,8 @@ void	shell_clear(t_shell **shell, void (*del)(void *));
 int		check_vars_shell(t_shell *shell, t_token *tokens);
 t_env	*new_var(char *src, int i);
 
+//t_shell/env_to_array.c
+char	**env_to_array(t_env *env_list);
+void	free_env_array(char **envp);
+
 #endif
