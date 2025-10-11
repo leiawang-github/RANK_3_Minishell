@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   preprocess_heredoc.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/30 15:46:09 by leia              #+#    #+#             */
-/*   Updated: 2025/09/07 17:56:54 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/12 00:08:00 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,20 +36,19 @@ int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted)
         *interrupted = 0;
     while (node)
     {
-        t_redir *r = node->redirs;
-        while (r)
+        t_redir *redir = node->redirs;
+        while (redir)
         {
-            if (r->redir_type == HEREDOC)
+            if (redir->redir_type == HEREDOC)
             {
-                rc = prepare_one_heredoc(r, envp, interrupted);
+                rc = prepare_one_heredoc(redir, envp, interrupted);
                 if (rc != 0)
                 {
-                    // 清理所有已打开的heredoc fd
                     cleanup_heredoc_fds(pipeline);
                     return rc; /* 130 if interrupted, else error */
                 }
             }
-            r = r->next;
+            redir = redir->next;
         }
         node = node->next;
     }
@@ -177,9 +176,9 @@ static int heredoc_collect_loop(t_redir *redir, int write_fd, char **envp)
 static char *expand_heredoc_line(const char *line, char **envp, int do_expand)
 {
     (void)envp; /* TODO: hook your real expander */
-    if (!line) 
+    if (!line)
         return NULL;
-    if (!do_expand) 
+    if (!do_expand)
         return (ft_strdup(line));
     return (ft_strdup(line));
 }
