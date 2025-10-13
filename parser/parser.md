@@ -154,3 +154,11 @@ t_cmd* pipeline_head
 
 
 
+t_mini（整个命令行）
+│
+├─ cmds : 链表（每个节点是一个 t_cmd）
+│   ├─ argv : 命令名+参数数组（char**）
+│   ├─ redirs : 重定向链表（t_redir*）
+│   └─ next : 下一个 t_cmd（若存在管道）
+│
+└─ 其他信息（环境变量、状态码、输入缓存等）

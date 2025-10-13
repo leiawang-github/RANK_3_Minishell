@@ -1,11 +1,11 @@
 任务明晰：
 
 1、 lexer的任务是什么？就是将用户输入切成特定类型的tokens，以便于在parser中使用。用户输入分成六类：
-- WORD 除了一下几种标识的剩下的都按照word处理
+- WORD 除了以下几种标识的剩下的都按照word处理
 - PIPE (|)
-- REDIR_IN (<)
-- REDIR_OUT (>)
-- REDIR_APP (>>)
+- IN (<)
+- OUT (>)
+- APP (>>)
 - HEREDOC (<<)
 只要是符合lexer参数要求都能被切割成token，不可以的情况就是如输入里面有不完整的单引号或者双引号，这时候lexer返回错误信息。
 
@@ -22,10 +22,10 @@ why？
 
 关于引号问题的处理：
 - 保留 token 的“内容”，去掉引号本身
-- 引号的作用是阻止分词和控制变量展开（单引号禁止展开，双引号允许展开）。
+- 引号的作用是阻止分词和控制变量展开（单引号禁止展开，双引号允许展开，只允许$标记）。
 所以 lexer 需要做的不是直接删掉引号，而是：
 -- 识别一对完整引号内的内容
--- 按规则决定是否保留 $ 等特殊字符
+-- 按规则决定是否保留 $
 -- 把结果拼进一个完整的 WORD token
 
 ```bash
@@ -68,6 +68,48 @@ This one however will cause error msg:
 example3:
 *line = readline("'bin/local ./sccript")；we'll get:
 "minishell: syntax error: unclosed quote" warning sign, because lexer is supposed to have complete quotes.
+
+
+update：
+如果我们对于token的枚举为:
+
+```rust
+typedef enum e_token_type
+{
+	END,
+	IN,	//<
+	OUT, //>
+	HEREDOC, //<<
+	APPEND, //>>
+	PIPE, //|
+	WORD, //words, commands, arguments, etc.
+}			t_token_type;
+
+那么举个例子，在lexer之后，得到的链表是：
+
+t_token("echo",    WORD)
+    ↓
+t_token("hello",   WORD)
+    ↓
+t_token(">",       OUT)
+    ↓
+t_token("out.txt", WORD)
+    ↓
+t_token(NULL,      END)
+
+可以归纳到这样一个结构体：
+
+typedef struct s_token
+{
+	char			*value;             // 具体字符串内容，例如 "echo" 或 ">"
+	t_token_type	type;               // 词法类型，如 WORD, OUT, PIPE 等
+	struct s_token	*prev;              // 前一个 token（方便 parser 回溯）
+	struct s_token	*next;              // 下一个 token（方便遍历）
+}	t_token;
+
+一个可以双向访问的链表，主要成员是一种输入类型和其值。然后交给parser处理。
+
+```
 
 
 

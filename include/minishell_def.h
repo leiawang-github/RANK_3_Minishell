@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell_def.h                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/02 18:47:29 by rtiberio          #+#    #+#             */
-/*   Updated: 2025/10/06 13:49:42 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/14 00:15:38 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ typedef struct	s_shell
 	int **pipes;        /* Array of pipes for pipeline communication */
 	int node_index;     /* Current node index in pipeline */
 	int node_count;     /* Total number of nodes in pipeline */
-	
+
 	/* Environment management */
 	t_env *env_list;   /* Environment variable list (exported variables) */
 	t_env *vars;       /* Internal variables (not exported) */
@@ -106,12 +106,16 @@ typedef struct	s_mini //! terminar de definir
 //execute
 
 
+
+
+
+
 #endif
 
 //-------------------------------what I need possibly from parser-----------------------
 //pipeline_list
 /*
-typedef struct s_cmd 
+typedef struct s_cmd
 {
     char     **cmd_argv; // first one will be cmd_name, the comes with arguments
     t_redir   *redirs; // a linked list, see below
