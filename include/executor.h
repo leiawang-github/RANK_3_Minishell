@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   executor.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/16 20:39:01 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/17 15:31:38 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@
 typedef struct s_mini   t_mini;
 
 /* Command classification */
-typedef enum e_cmd_type 
+typedef enum e_cmd_type
 {
     CMD_REDIR_ONLY,  /* empty command with only redirections */
     CMD_BUILTIN,
@@ -43,7 +43,7 @@ typedef enum e_cmd_type
     CMD_INVALID
 } t_cmd_type;
 
-enum e_err 
+enum e_err
 {
     ERR_NONE,
     ERR_SYNTAX,

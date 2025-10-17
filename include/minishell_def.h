@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/02 18:47:29 by rtiberio          #+#    #+#             */
-/*   Updated: 2025/10/14 00:15:38 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/17 16:12:16 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,32 +76,44 @@ typedef struct s_varexp
 }				t_varexp;
 
 //parsing
+typedef enum e_redir_type
+{
+    IN,       // <
+    OUT,      // >
+    HEREDOC,     // <<
+    APP       // >>
+} t_redir_type;
+
 typedef struct	s_redir
 {
-    t_token_type	redir_type;   // which kind of redirection
-    char			*file; // file path or heredoc delimiter
-    char			*delimiter;// this is the char* after remove quotes(either single or double),ex: "EOF" -> EOF
-	int				do_expand; // only for heredoc one case: if delimiter is quoted, do_expand = 0;
-	int				fd;
-	bool			fd_is_open;
+    t_redir_type	redir_type;   // which kind of redirection
+    char			*target; // when we see a redir, what's next to this redir is a redir target, ex: echo >hi.txt, hi.txt is a target
+	// below three only for heredoc
+	char			*delimiter;// only applies to heredoc after remove the quotes: "EOF" -> EOF
+	int				hdoc_expand; // only for heredoc one case: if delimiter is quoted, do_expand = 0; mark here so we will expand $
+	int          	heredoc_fd;  // 预处理后填入：<< 的读端 FD，否则为 -1
+
     struct s_redir	*next;   // pointer for linking multiple redirs
 }				t_redir;
+
 
 typedef struct	s_mini //! terminar de definir
 {
 	char			*cmd_name; //para el primer argumento
-	t_redir			*redirs;
 	char			**cmd_argv;
-	char			**assigns; //asignaciones de variables locales como por ejemplo Comando: VAR=value echo $VAR . assigns contendría algo como ["VAR=value"]. cmd_argv contendría ["echo", "$VAR"].
+	t_redir			*redirs;
+	//char			**assigns; //asignaciones de variables locales como por ejemplo Comando: VAR=value echo $VAR . assigns contendría algo como ["VAR=value"]. cmd_argv contendría ["echo", "$VAR"].
 	bool			is_builtin;
-	int				argc; //número de argumentos en cmd_argv
-	int				num_redirs; //número de redirecciones en redirs
+	//int				argc; //número de argumentos en cmd_argv
+	//int				num_redirs; //número de redirecciones en redirs
 	int				exit_status; //estado de salida del comando
 	int				stdin_fd; //para guardar el stdin original
 	int				stdout_fd; //para guardar el stdout original
-	char			*heredoc_delimiter; //array de strings para los contenidos de los heredocs //! ya esta en refirs?
+	//char			*heredoc_delimiter; //array de strings para los contenidos de los heredocs //! ya esta en refirs?
 	struct s_mini	*next;
 }				t_mini;
+
+
 
 //execute
 
@@ -136,3 +148,18 @@ typedef struct s_redir {
 //     R_REDIR_HEREDOC
 // } t_redir_type;
 //---------------------------------------------------------------------------------------
+
+
+typedef struct	s_mini //! terminar de definir
+{
+	char			*cmd_name; //para el primer argumento
+	char			**cmd_argv;
+	t_redir			*redirs;
+	bool			is_builtin;
+	int				exit_status; //estado de salida del comando
+	int				stdin_fd; //para guardar el stdin original
+	int				stdout_fd; //para guardar el stdout original
+	struct s_mini	*next;
+}				t_mini;
+
+
