@@ -1,4 +1,88 @@
+updated version:
+step0: loop throught what parser offered us (should be a pipeline with a lot of simple cmds);
+chech if there is a redir in each cmds, if there redir in cmd check if there is heredoc redir type in this redir. If also yes we prepocess heredoc first before we do anything.
+
+
 ```rust
+Step0::prepare_all_heredocs(head)
+┌──────────────────────────────────────────────────────────────┐
+│                                                             │
+│ • last_status = 0                                           │
+│ • install_heredoc_signals()                                 │
+│ • cmd = head                                                │
+└──────────────┬───────────────────────────────────────────────┘
+               ▼
+while (cmd != NULL)
+    │
+    ├─ // 先判断是否存在 redir 链
+    ├─ if (cmd->redirs == NULL) { cmd = cmd->next; continue; }
+    │
+    ├─ // 遍历该命令的每个 redir（只用 while）
+    ├─ redir = cmd->redirs
+    ├─ while (redir != NULL)
+    │     │
+    │     ├─ if (redir->redir_type != R_HDOC) {
+    │     │       redir = redir->next;      // 不是 heredoc，跳过
+    │     │       continue;
+    │     │   }
+    │     │
+    │     ├─ // —— heredoc 规范化（分隔符与展开策略）——
+    │     ├─ redir->delimiter   = strip_quotes(redir->target)
+    │     ├─ redir->hdoc_expand = !has_any_quote(redir->target)
+    │     ├─ redir->heredoc_fd  = -1
+    │     │
+    │     ├─ // 建立承载：匿名管道承接 heredoc 内容
+    │     ├─ if (pipe(pfd) < 0) → goto FATAL
+    │     │
+    │     ├─ // 读入循环：直到遇到 delimiter / Ctrl-C / Ctrl-D
+    │     ├─ while (1)
+    │     │     ├─ line = readline("> ")
+    │     │     ├─ if (line == NULL) {
+    │     │     │     warn_hdoc_eof(redir->delimiter);   // Ctrl-D
+    │     │     │     break;
+    │     │     │   }
+    │     │     ├─ if (exact_equal(line, redir->delimiter)) {
+    │     │     │     free(line); break;
+    │     │     │   }
+    │     │     ├─ if (sigint_fired()) {
+    │     │     │     free(line); close(pfd[0]); close(pfd[1]);
+    │     │     │     last_status = 130; goto ABORT;
+    │     │     │   }
+    │     │     ├─ // 正常一行：按需 $ 展开 → 写入管道写端
+    │     │     ├─ out = line
+    │     │     ├─ if (redir->hdoc_expand) {
+    │     │     │     out = expand_vars(line, env); free(line);
+    │     │     │   }
+    │     │     ├─ dprintf(pfd[1], "%s\n", out)
+    │     │     └─ if (out != line) free(out)
+    │     │
+    │     ├─ // 收尾：关闭写端，保存读端供后续 dup2(STDIN)
+    │     ├─ close(pfd[1])
+    │     ├─ redir->heredoc_fd = pfd[0]
+    │     ├─ mark_fd_for_cleanup_later(pfd[0])    // 父进程收尾统一关闭
+    │     └─ redir = redir->next
+    │
+    └─ cmd = cmd->next
+               │
+               ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 成功：restore_interactive_signals(); return 0                │
+└──────────────────────────────────────────────────────────────┘
+
+ABORT:  // SIGINT 中断 heredoc
+    close_all_marked_heredoc_fds();
+    restore_interactive_signals();
+    return 130;
+
+FATAL:  // pipe 等致命错误
+    perror("pipe");
+    close_all_marked_heredoc_fds();
+    restore_interactive_signals();
+    return 1;
+```rust
+
+
+
 
 readline → LEXER → PARSER
                     │
