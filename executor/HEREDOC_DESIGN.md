@@ -1,6 +1,94 @@
 # Heredoc 设计原理与实现详解
 
-## 一、什么是Heredoc？
+# heredoc 数据流：父进程（shell） ↔ 子进程（heredoc） ↔ 命令执行阶段
+```bash
+                ┌──────────────────────────────────────────────────────┐
+                │                    SHELL                        │
+                │ (parent process)                                     │
+                │ ──────────────────────────────────────────────────── │
+                │                                                      │
+                │  1️⃣ 调用 pipe(pfd)                                  │
+                │      pfd[0] ── 读端 (父将来保存)                     │
+                │      pfd[1] ── 写端 (子将来使用)                     │
+                │                                                      │
+                │  2️⃣ fork()                                           │
+                │      │                                                │
+                │      ├──► 子进程 (heredoc collector)                 │
+                │      │                                                │
+                │      └── 保留 pfd[0]，关闭 pfd[1]                    │
+                │                                                      │
+                │  3️⃣ 等待子进程                                       │
+                │      waitpid(pid, &status, 0)                        │
+                │                                                      │
+                │  4️⃣ 若成功：                                         │
+                │      redir->heredoc_fd = pfd[0];                     │
+                │                                                      │
+                └──────────────────────────────────────────────────────┘
+                                     │
+                                     │ heredoc_fd 保存了管道的读端
+                                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                  执行阶段：命令子进程                                  │
+│ ────────────────────────────────────────────────────────────────────── │
+│  dup2(redir->heredoc_fd, STDIN_FILENO);                               │
+│  close(redir->heredoc_fd);                                            │
+│                                                                       │
+│  ──► 命令执行时，STDIN 来自 heredoc 的管道读端                         │
+└────────────────────────────────────────────────────────────────────────┘
+
+
+        子进程 (heredoc collector)
+        ┌──────────────────────────────────────────┐
+        │ SIGINT = DFL   SIGQUIT = IGN             │
+        │ ─────────────────────────────────────── │
+        │ close(pfd[0]);                          │
+        │ while (1):                              │
+        │   line = readline("> ");                │
+        │   if (line==NULL) break;                │
+        │   if (strcmp(line, delimiter)==0) break;│
+        │   write(pfd[1], line, len); write(pfd[1], "\n", 1); │
+        │ close(pfd[1]); _exit(0);                │
+        └──────────────────────────────────────────┘
+                         │
+                         │ (写入)
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│             内核匿名管道对象                                │
+│ ─────────────────────────────────────────────────────────── │
+│ [缓冲区: line1\n line2\n ...]                               │
+│                                                             │
+│ 被写端(pfd[1])写入的数据，供读端(pfd[0])在父进程中读取。  │
+└─────────────────────────────────────────────────────────────┘
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 一、什么是Heredoc？
 
 Heredoc（Here Document）是shell中的一种特殊重定向方式，允许在命令行中直接输入多行文本作为命令的输入。
 
@@ -197,7 +285,7 @@ int execute_command(t_mini *pipeline, char **envp, t_env *env_list)
     rc = preprocess_heredoc(pipeline, envp, &interrupted);
     if (rc != 0)
         return rc;  // 中断或错误，直接返回
-    
+
     // 第二步：执行命令（单节点或管道）
     if (!pipeline->next)
         return exec_single_cmd(...);
@@ -303,62 +391,62 @@ static int prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted)
 {
     int fds[2];
     pid_t child;
-    
+
     // 1. 创建管道
     pipe(fds);  // fds[0]=read, fds[1]=write
-    
+
     // 2. 父进程忽略信号（避免readline被中断）
     signal(SIGINT, SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
-    
+
     // 3. Fork子进程收集输入
     child = fork();
     if (child == 0) {
         // 子进程：恢复信号，允许Ctrl+C中断
         signal(SIGINT, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
-        
+
         close(fds[0]);  // 关闭读端
-        
+
         // 循环读取输入直到遇到delimiter
         while (1) {
             line = readline("heredoc> ");
             if (!line || strcmp(line, delimiter) == 0)
                 break;
-            
+
             // 可选：变量展开
             expanded = expand_variables(line);
-            
+
             // 写入管道
             write(fds[1], expanded, strlen(expanded));
             write(fds[1], "\n", 1);
-            
+
             free(line);
             free(expanded);
         }
-        
+
         close(fds[1]);
         _exit(0);
     }
-    
+
     // 4. 父进程：等待子进程
     close(fds[1]);  // 关闭写端
     waitpid(child, &status, 0);
-    
+
     // 5. 检查子进程退出状态
     if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT) {
         *interrupted = 1;
         close(fds[0]);
         return 130;  // Ctrl+C
     }
-    
+
     // 6. 保存读端给后续使用
     redir->fd = fds[0];  // 保存管道读端
-    
+
     // 7. 恢复信号处理
     signal(SIGINT, sigint_handler);
     signal(SIGQUIT, SIG_IGN);
-    
+
     return 0;
 }
 ```
@@ -392,7 +480,7 @@ static int prepare_one_heredoc(t_redir *redir, char **envp, int *interrupted)
 int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted)
 {
     t_mini *node = pipeline;
-    
+
     while (node) {
         t_redir *r = node->redirs;
         while (r) {
@@ -460,7 +548,7 @@ EOF
 int exec_redirs(t_redir *redirs)
 {
     t_redir *r = redirs;
-    
+
     while (r) {
         if (r->redir_type == IN)
             dup2(open(r->file), STDIN);      // 设置stdin
@@ -597,8 +685,8 @@ EOF
 
 # 5. 只有空格的行
 cat << EOF
-   
-	
+
+
 EOF
 
 # 6. delimiter是EOF的子串

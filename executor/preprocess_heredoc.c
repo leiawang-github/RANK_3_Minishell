@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/30 15:46:09 by leia              #+#    #+#             */
-/*   Updated: 2025/10/21 18:30:48 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 00:06:18 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,27 +50,6 @@
             r->heredoc_fd = pfd[0]            // 交付给执行阶段 dup2(STDIN)
             （可登记清理表）g_last_status=0; 返回 0
 */
-static int hdoc_collect(const char *delim, int wfd, int do_expand)
-{
-    char *line;
-    while (1)
-    {
-        line = readline("> ");
-        if (line == NULL)
-            break;
-        if (ft_strcmp(line, delim) == 0)
-        {
-            free(line);
-            break;
-        }
-        if (do_expand)
-            expand_vars_inplace(&line, get_envp_snapshot());
-        write(wfd, line, ft_strlen(line));
-        write(wfd, "\n", 1);
-        free(line);
-    }
-    return 0;
-}
 
 static int prepare_all_heredocs(t_mini *head)
 {
@@ -97,14 +76,13 @@ static int prepare_all_heredocs(t_mini *head)
     return 0;
 }
 
-int prepare_one_heredoc(t_redir *r)
+int prepare_one_heredoc(t_redir *redir)
 {
-    int pfd[2];
+    int pfd[2]; //create a pipe to communicate between parent and child processes
     int st;
-    pid_t pid;
+    pid_t pid; //return value of fork func
     struct sigaction ign = {0}, dfl = {0}, qign = {0}, old = {0};
 
-    r->heredoc_fd = -1;
     if (pipe(pfd) < 0)
     {
         g_last_status = 1;
@@ -118,21 +96,22 @@ int prepare_one_heredoc(t_redir *r)
         g_last_status = 1;
         return 1;
     }
-    if (pid == 0)
+    if (pid == 0) //successfully fork child process
     {
         dfl.sa_handler = SIG_DFL;
         qign.sa_handler = SIG_IGN;
         sigaction(SIGINT, &dfl, NULL);
         sigaction(SIGQUIT, &qign, NULL);
         close(pfd[0]);
-        hdoc_collect(r->delimiter, pfd[1], r->hdoc_expand);
+        hdoc_collect(redir->delimiter, pfd[1], redir->hdoc_expand);
         close(pfd[1]);
         _exit(0);
     }
-
-    ign.sa_handler = SIG_IGN; sigaction(SIGINT, &ign, &old);
-    close(pfd[1]); waitpid(pid, &st, 0); sigaction(SIGINT, &old, NULL);
-
+    ign.sa_handler = SIG_IGN;
+    sigaction(SIGINT, &ign, &old);
+    close(pfd[1]);
+    waitpid(pid, &st, 0);
+    sigaction(SIGINT, &old, NULL);
     if (WIFSIGNALED(st) && WTERMSIG(st) == SIGINT)
     {
         close(pfd[0]);
@@ -145,7 +124,29 @@ int prepare_one_heredoc(t_redir *r)
         g_last_status = 1;
         return 1;
     }
-    r->heredoc_fd = pfd[0];
+    redir->heredoc_fd = pfd[0];
     g_last_status = 0;
+    return 0;
+}
+
+static int hdoc_collect(const char *delim, int wfd, int hdoc_expand)
+{
+    char *line;
+    while (1)
+    {
+        line = readline("> ");
+        if (line == NULL)
+            break;
+        if (ft_strcmp(line, delim) == 0)
+        {
+            free(line);
+            break;
+        }
+        if (hdoc_expand)
+            expand_vars_inplace(&line, get_envp_snapshot());
+        write(wfd, line, ft_strlen(line));
+        write(wfd, "\n", 1);
+        free(line);
+    }
     return 0;
 }
