@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/29 23:00:52 by leia              #+#    #+#             */
-/*   Updated: 2025/10/17 15:31:38 by leiwang          ###   ########.fr       */
+/*   Created: 2025/10/19 18:08:08 by leiwang           #+#    #+#             */
+/*   Updated: 2025/10/19 18:44:05 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ int exec_pipeline(t_mini *head, char **envp, t_env *env_list);
 char *which_path(char *cmd_name, t_env *env_list);
 
 /* Heredoc preprocess */
-int preprocess_heredoc(t_mini *pipeline, char **envp, int *interrupted);
+int preprocess_heredoc(t_mini *head);
 
 /* Error helper */
 void error_status(enum e_err kind);
@@ -99,6 +99,8 @@ void sigint_handler(int sig);
 void sigquit_handler(int sig);
 void setup_signal_handlers(void);
 void restore_signal_handlers(void);
+int install_heredoc_parent_signals(void);
+int restore_interactive_signals(void);
 
 
 
