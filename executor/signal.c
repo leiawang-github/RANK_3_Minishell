@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor.c                                         :+:      :+:    :+:   */
+/*   signal.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/10/22 23:42:43 by leiwang          ###   ########.fr       */
+/*   Created: 2025/09/07 14:18:11 by leia              #+#    #+#             */
+/*   Updated: 2025/10/22 17:43:17 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,15 +14,21 @@
 #include "../include/minishell.h"
 #include "../include/minishell_def.h"
 
-int main_execution(t_mini *head, char **envp, t_env *env_list)
+void	set_parent_ignore_signals(void (**old_i)(int), void (**old_q)(int))
 {
-    t_mini *cmd;
-    int heredof_fd;
-
-    cmd = head;
-    if(!cmd)
-        return (g_last_status = 1);
-
+	*old_i = signal(SIGINT, SIG_IGN);
+	*old_q = signal(SIGQUIT, SIG_IGN);
 }
 
+int	fail_wait_cleanup(int *pfd, void (*old_i)(int), void (*old_q)(int))
+{
+	restore_parent_signals(old_i, old_q);
+	close(pfd[0]);
+	return (g_last_status = 1);
+}
 
+void	restore_parent_signals(void (*old_i)(int), void (*old_q)(int))
+{
+	signal(SIGINT, old_i);
+	signal(SIGQUIT, old_q);
+}

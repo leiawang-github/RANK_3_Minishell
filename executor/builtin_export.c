@@ -6,12 +6,13 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/11 23:20:10 by leia              #+#    #+#             */
-/*   Updated: 2025/09/15 23:00:24 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:34:31 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 /* Function declarations */
 static int show_all_exported_vars(t_env *env_list);
@@ -142,10 +143,10 @@ static void sort_env_array(t_env **nodes, int count)
 static int process_export_arg(const char *arg, t_env **env_list)
 {
     const char *equal_pos;
-    
+
     if (!arg || !*arg)
         return 0;
-    
+
     equal_pos = ft_strchr(arg, '=');
     if (equal_pos)
     {
@@ -175,30 +176,30 @@ static int validate_and_set_var(const char *arg, t_env **env_list)
     char *name;
     char *value;
     int name_len;
-    
+
     equal_pos = ft_strchr(arg, '=');
     if (!equal_pos)
         return 1;
-    
+
     name_len = equal_pos - arg;
     name = ft_substr(arg, 0, name_len);
     if (!name)
         return 1;
-    
+
     if (!is_valid_var_name(name))
     {
         free(name);
         err_msg("export", ": not a valid identifier", ERR_SYS_BUILTIN);
         return 1;
     }
-    
+
     value = ft_strdup(equal_pos + 1);
     if (!value)
     {
         free(name);
         return 1;
     }
-    
+
     add_or_update_env_var(env_list, name, value);
     free(name);
     free(value);
@@ -219,7 +220,7 @@ static t_env *find_env_var(t_env *env_list, const char *name)
 static void add_or_update_env_var(t_env **env_list, const char *name, const char *value)
 {
     t_env *existing;
-    
+
     existing = find_env_var(*env_list, name);
     if (existing)
     {

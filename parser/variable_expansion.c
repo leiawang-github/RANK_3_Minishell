@@ -6,7 +6,7 @@
 /*   By: codespace <codespace@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 17:18:18 by codespace         #+#    #+#             */
-/*   Updated: 2025/09/25 18:58:31 by codespace        ###   ########.fr       */
+/*   Updated: 2025/10/22 10:11:04 by codespace        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,15 +87,15 @@ int	build_varexp(char *src, t_varexp **var, t_shell *shell)
 {
 	int r;
 	
-	r = create_var_exp(src, *var, shell);
+	r = create_var_exp(src, var, shell);
 	if (r == 1)
 		return (1);
-	(*var)->len_new_str = caculate_new_len(*var);
+	(*var)->len_new_str = calculate_new_len(*var);
 	(*var)->new_str = malloc(sizeof(char) * ((*var)->len_new_str + 1));
 	if (!(*var)->new_str)
 		return (1);
 	(*var)->new_str[(*var)->len_new_str] = '\0';
-	fill_new_str(*var);
+	fill_new_str(var);
 	return (0);
 }
 

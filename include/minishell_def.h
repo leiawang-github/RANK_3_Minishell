@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:06:02 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/19 18:06:03 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:38:11 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,14 +103,7 @@ typedef struct	s_mini //! terminar de definir
 	char			*cmd_name; //para el primer argumento
 	char			**cmd_argv;
 	t_redir			*redirs;
-	//char			**assigns; //asignaciones de variables locales como por ejemplo Comando: VAR=value echo $VAR . assigns contendría algo como ["VAR=value"]. cmd_argv contendría ["echo", "$VAR"].
 	bool			is_builtin;
-	//int				argc; //número de argumentos en cmd_argv
-	//int				num_redirs; //número de redirecciones en redirs
-	int				exit_status; //estado de salida del comando
-	int				stdin_fd; //para guardar el stdin original
-	int				stdout_fd; //para guardar el stdout original
-	//char			*heredoc_delimiter; //array de strings para los contenidos de los heredocs //! ya esta en refirs?
 	struct s_mini	*next;
 }				t_mini;
 

@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_cd.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/14 12:35:05 by leia              #+#    #+#             */
-/*   Updated: 2025/09/15 20:24:45 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/22 17:33:51 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 /* Static function declarations */
 static char *get_env_var(t_env *env, const char *name);
@@ -29,21 +30,21 @@ int builtin_cd(char **argv, t_env *env)
 {
     char *target_dir;
     char *newpwd;
-    
+
     if (!argv[1])// only cd without any argvs, we just use HOME as cd's directory after cd cmd is executed
     {
         target_dir = get_env_var(env, "HOME");
         if (!target_dir || !*target_dir)
             return err_msg("cd", ": HOME not set", ERR_SYS_BUILTIN);
-    } 
-    else 
+    }
+    else
         target_dir = argv[1]; // set second argv as the path where cd cmd shoulg go
-    if (chdir(target_dir) == -1) 
+    if (chdir(target_dir) == -1)
           return ft_errno("cd", errno, ERR_SYS_BUILTIN);
     newpwd = getcwd(NULL, 0); //从系统里拿出来的pwd
-    if (newpwd && env) 
+    if (newpwd && env)
     {
-        update_pwd(env, newpwd); 
+        update_pwd(env, newpwd);
         free(newpwd);
     }
     g_last_status = 0;
@@ -52,10 +53,10 @@ int builtin_cd(char **argv, t_env *env)
 
 static char *get_env_var(t_env *env, const char *name) //只针对HOME情况，也就是cd后面没有参数
 {
-    t_env *current = env;  
-    
-    while (current) 
-    {  
+    t_env *current = env;
+
+    while (current)
+    {
         if (ft_strcmp(current->name, name) == 0) // 找到匹配的变量名
             return current->value;  // 返回变量值
         current = current->next;  // 移动到下一个节点
@@ -67,7 +68,7 @@ static char *get_env_var(t_env *env, const char *name) //只针对HOME情况，�
 static void update_pwd(t_env *env, const char *new_path)
 {
     t_env *current = env;
-    
+
     while (current) {
         if (ft_strcmp(current->name, "PWD") == 0) {
             if (current->value)

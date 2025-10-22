@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   delete-copy_tokens_utils.c                         :+:      :+:    :+:   */
+/*   clean_quotes.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rtiberio <rtiberio@student.42.fr>          +#+  +:+       +#+        */
+/*   By: codespace <codespace@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/15 09:04:43 by codespace         #+#    #+#             */
-/*   Updated: 2025/09/20 19:40:10 by rtiberio         ###   ########.fr       */
+/*   Created: 2025/08/30 16:41:47 by rtiberio          #+#    #+#             */
+/*   Updated: 2025/10/22 10:01:57 by codespace        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,22 +61,28 @@ int	count_npairs_quotes(char *tmp)
 		}
 		i++;
 	}
-	len = ft_strlen(tmp) - (2 * n_pairs);
-	return (len);
+	return (n_pairs);
 }
 
 char	*ft_remove_quotes(char *tmp)
 {
 	int		len;
 	char	*clean;
+	int		n_pairs;
 
 	if (!tmp)
 		return (NULL);
-	len = count_npairs_quotes(tmp);
-	clean = malloc(sizeof(char) * (len + 1));
-	if (!clean)
-		return (NULL);
-	clean [len] = '\0';
-	ft_clean_quotes(clean, tmp);
+	n_pairs = count_npairs_quotes(tmp);
+	if (n_pairs == 0)
+		clean = ft_strdup(tmp);
+	else
+	{
+		len = ft_strlen(tmp) - (2 * n_pairs);
+		clean = malloc(sizeof(char) * (len + 1));
+		if (!clean)
+			return (NULL);
+		clean [len] = '\0';
+		ft_clean_quotes(clean, tmp);
+	}
 	return (clean);
 }

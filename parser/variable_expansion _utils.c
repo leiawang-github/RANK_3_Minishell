@@ -11,8 +11,6 @@
 /* ************************************************************************** */
 
 #include "minishell.h"
-#include <string.h>
-#include <ctype.h>
 
 void	*free_t_varexp(t_varexp *var)
 {

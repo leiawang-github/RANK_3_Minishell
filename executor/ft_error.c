@@ -3,14 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   ft_error.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/06 05:42:29 by leia              #+#    #+#             */
-/*   Updated: 2025/09/16 22:27:20 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/22 17:35:16 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
+#include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 void error_status(enum e_err kind)
 {
@@ -29,7 +31,7 @@ void error_status(enum e_err kind)
 }
 
 /*
-when system call fails, the kernal set errno by perror() 
+when system call fails, the kernal set errno by perror()
 
 void perror(const char *s);
 extern int errno;  // 全局错误号变量
@@ -37,14 +39,14 @@ extern int errno;  // 全局错误号变量
 
 // 常见的 errno 值
 #define ENOENT    2   // No such file or directory
-#define EACCES   13   // Permission denied  
+#define EACCES   13   // Permission denied
 #define EINVAL   22   // Invalid argument
 #define EISDIR   21   // Is a directory
 #define ENOTDIR  20   // Not a directory
 #define ENAMETOOLONG 36  // File name too long
 */
 
-int ft_errno(const char *file, int saved_errno, enum e_err kind) 
+int ft_errno(const char *file, int saved_errno, enum e_err kind)
 {
     write(2, "minishell: ", 11);
     // 不修改全局errno，使用perror的替代实现
@@ -58,7 +60,7 @@ int ft_errno(const char *file, int saved_errno, enum e_err kind)
 }
 
 
-/* Note：支持两个字符串拼接，避免内存分配 
+/* Note：支持两个字符串拼接，避免内存分配
 Shell 内部逻辑错误才调用这个函数， shell级别的
 
 */

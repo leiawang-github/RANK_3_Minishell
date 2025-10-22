@@ -11,13 +11,10 @@
 /* ************************************************************************** */
 
 #include "minishell.h"
-#include "t_shell_handling.h"
-#include <ctype.h>
 
 
 void	shell_clear(t_shell **shell, void (*del)(void *))
 {
-	(void)del; // 标记未使用的参数
 	if ((*shell)->env_list)
 		env_lstclear(&(*shell)->env_list, &free_null);
 	if ((*shell)->vars)
@@ -32,7 +29,7 @@ t_env	*new_var(char *src, int i)
 
 	new = malloc(sizeof(t_env));
 	if (!new)
-		return (NULL);
+		return ;
 	ft_memset(new, 0, sizeof(t_env));
 	if (!src)
 		return (new);

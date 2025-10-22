@@ -6,12 +6,13 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 22:55:18 by leiwang           #+#    #+#             */
-/*   Updated: 2025/09/15 22:56:08 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:34:27 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 static void print_name_value(const char *name, const char *value);
 static int  env_arg_error(const char *arg);

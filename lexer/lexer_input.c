@@ -109,18 +109,39 @@ t_token	*lexer(char *input)
 	t_token	*data;
 
 	num_tokens = 0;
+	printf("input en lexer: %s\n", input);//para borrar
 	if (precheck_input(input) == 1)
 		return (NULL);
 	num_tokens = count_tokens(input, num_tokens);
+	printf("num_tokens ok\n");//para borrar
 	if (num_tokens < 0)
 		return (NULL);
 	tokens = tokenize(input, num_tokens);
 	if (!tokens)
 		return (NULL);
+	int	z;// para borrar desde aca
+	z = 0;
+	while (tokens[z] != NULL)
+	{
+		printf("tokens[%d]: ", z);
+		printf("'%s'\n", tokens[z]);
+		z++;
+	}
+	printf("listo para token_list\n");// para borrar hasta aca
 	data = token_list(tokens, num_tokens);
 	free_array(tokens);
 	if (!data)
 		return (NULL);
+	z = 0;
+	t_token *tmp = data;
+	while (tmp != NULL)
+	{
+		printf("data num node = %d\n", z);
+		printf("value = %s\n", tmp->value);
+		printf("type = %u\n", tmp->type);
+		tmp = tmp->next;
+		z++;
+	}
 	status_code(0);
 	return (data);
 }

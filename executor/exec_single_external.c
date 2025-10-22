@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   exec_single_external.c                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 23:11:22 by leiwang           #+#    #+#             */
-/*   Updated: 2025/09/17 17:07:39 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/22 17:34:47 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 /* Function declarations */
 static char *search_in_path(const char *cmd, t_env *env_list);
@@ -51,14 +52,14 @@ int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
     pid_t pid;
     int status; //：存储子进程退出状态的变量地址
     char **current_envp; // 使用当前环境变量
-    
+
     // 将t_env转换为char**数组
     current_envp = env_to_array(env_list);
     if (!current_envp)
         current_envp = envp; // 如果转换失败，使用原始envp
-    
-    path = which_path(pipeline->cmd_argv[0], env_list); 
-    if (!path) 
+
+    path = which_path(pipeline->cmd_argv[0], env_list);
+    if (!path)
     {
         err_msg(pipeline->cmd_argv[0], ": command not found", ERR_CMD_NOT_FOUND);
         if (current_envp != envp)
@@ -71,11 +72,11 @@ int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
         // 应用重定向（在子进程中）
         if (exec_redirs(pipeline->redirs) != 0)
             exit(1);
-        
+
         execve(path, pipeline->cmd_argv, current_envp);
         ft_errno(pipeline->cmd_argv[0], errno, ERR_CANNOT_EXEC);
         exit(126); // execve failed
-    } 
+    }
     else if (pid > 0) // parent process
     {
         while (waitpid(pid, &status, 0) == -1)
@@ -92,15 +93,15 @@ int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
         free(path);
         if (current_envp != envp)
             free_env_array(current_envp);
-        
+
         // 正确处理退出状态
         if (WIFEXITED(status))
             g_last_status = WEXITSTATUS(status);
         else if (WIFSIGNALED(status))
             g_last_status = 128 + WTERMSIG(status);
-        
+
         return g_last_status;
-    } 
+    }
     else
     {
         free(path);
@@ -115,16 +116,16 @@ int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)
 char *which_path(char *cmd_name, t_env *env_list)  // return value itself is the path to be executed
 {
 	char *path;
-	
+
 	if (!cmd_name || !*cmd_name)
         return NULL;
 	if(ft_strchr(cmd_name, '/')) // contains '/' -> absolute or relative path
-    { 
+    {
         if (check_executable(cmd_name, 1) == 0) // 在知道是绝对路径或者相对路径前提下，
-            return ft_strdup(cmd_name); // 直接返回副本, 
+            return ft_strdup(cmd_name); // 直接返回副本,
         return NULL;
     }
-    path = search_in_path(cmd_name, env_list); 
+    path = search_in_path(cmd_name, env_list);
 	if(path)
         return path; // 找到返回路径字符串，否则 NULL
 	return (NULL);
@@ -133,7 +134,7 @@ char *which_path(char *cmd_name, t_env *env_list)  // return value itself is the
 
 static char *get_env_value(t_env *env_list, const char *name)
 {
-    while (env_list) 
+    while (env_list)
 	{
         if (ft_strncmp(env_list->name, name, ft_strlen(name) + 1) == 0)
             return (env_list->value);    /* 只读返回 */
@@ -176,14 +177,14 @@ static char *search_in_path(const char *cmd, t_env *env_list) //should return wh
                 i++;
             }
             free(path_dirs);
-            return NULL; 
+            return NULL;
         }
         ft_memcpy(candidate, dir, len_dir);
         candidate[len_dir] = '/';
         ft_memcpy(candidate + len_dir + 1, cmd, len_cmd);
         candidate[len_dir + 1 + len_cmd] = '\0';
 
-        if (check_executable(candidate, 0) == 0) 
+        if (check_executable(candidate, 0) == 0)
         {
             i = 0;
             while (path_dirs[i]) {
@@ -205,10 +206,10 @@ static char *search_in_path(const char *cmd, t_env *env_list) //should return wh
     return NULL;
 }
 
-static int check_executable(const char *path, int verbose) 
+static int check_executable(const char *path, int verbose)
 {
     struct stat st;
-    
+
     if (!path || !*path)
         return -1;
     if (access(path, F_OK) != 0) /* 检查文件是否存在 */
@@ -249,7 +250,7 @@ int access(const char *pathname, int mode);
 // mode 参数：
 F_OK  // 文件是否存在
 R_OK  // 是否有读权限
-W_OK  // 是否有写权限  
+W_OK  // 是否有写权限
 X_OK  // 是否有执行权限
 
 #include <sys/stat.h>

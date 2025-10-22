@@ -6,12 +6,13 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/30 15:46:09 by leia              #+#    #+#             */
-/*   Updated: 2025/10/22 00:06:18 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:33:25 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 /*
 流程：
@@ -51,7 +52,13 @@
             （可登记清理表）g_last_status=0; 返回 0
 */
 
-static int prepare_all_heredocs(t_mini *head)
+static int	prepare_one_heredoc(t_redir *redir);
+static void	heredoc_child(t_redir *redir, int *pfd);
+static int	fail_fork_close(int *pfd);
+static void	hdoc_collect(char *delim, int fd, int expand);
+
+
+int prepare_all_heredocs(t_mini *head)
 {
     t_mini  *cmd;
     t_redir *redir;
@@ -76,77 +83,77 @@ static int prepare_all_heredocs(t_mini *head)
     return 0;
 }
 
-int prepare_one_heredoc(t_redir *redir)
+static int	prepare_one_heredoc(t_redir *redir)
 {
-    int pfd[2]; //create a pipe to communicate between parent and child processes
-    int st;
-    pid_t pid; //return value of fork func
-    struct sigaction ign = {0}, dfl = {0}, qign = {0}, old = {0};
+	int		pfd[2];
+	int		st;
+	pid_t	pid;
+	void	(*old_ign)(int);
+	void	(*old_quit)(int);
 
-    if (pipe(pfd) < 0)
-    {
-        g_last_status = 1;
-        return 1;
-    }
-    pid = fork();
-    if (pid < 0)
-    {
-        close(pfd[0]);
-        close(pfd[1]);
-        g_last_status = 1;
-        return 1;
-    }
-    if (pid == 0) //successfully fork child process
-    {
-        dfl.sa_handler = SIG_DFL;
-        qign.sa_handler = SIG_IGN;
-        sigaction(SIGINT, &dfl, NULL);
-        sigaction(SIGQUIT, &qign, NULL);
-        close(pfd[0]);
-        hdoc_collect(redir->delimiter, pfd[1], redir->hdoc_expand);
-        close(pfd[1]);
-        _exit(0);
-    }
-    ign.sa_handler = SIG_IGN;
-    sigaction(SIGINT, &ign, &old);
-    close(pfd[1]);
-    waitpid(pid, &st, 0);
-    sigaction(SIGINT, &old, NULL);
-    if (WIFSIGNALED(st) && WTERMSIG(st) == SIGINT)
+	if (!redir)
+		return (g_last_status = 1);
+	if (pipe(pfd) < 0)
+		return (g_last_status = 1);
+	pid = fork();
+	if (pid < 0)
+		return (fail_fork_close(pfd));
+	if (pid == 0)
+		heredoc_child(redir, pfd);
+	set_parent_ignore_signals(&old_ign, &old_quit);
+	close(pfd[1]);
+	if (waitpid(pid, &st, 0) == -1)
+		return (fail_wait_cleanup(pfd, old_ign, old_quit));
+	restore_parent_signals(old_ign, old_quit);
+	if (WIFSIGNALED(st) && WTERMSIG(st) == SIGINT)
     {
         close(pfd[0]);
-        g_last_status = 130;
-        return 130;
+        return (g_last_status = 130);
     }
-    if (!WIFEXITED(st) || WEXITSTATUS(st) != 0)
+	if (!WIFEXITED(st) || WEXITSTATUS(st) != 0)
     {
         close(pfd[0]);
-        g_last_status = 1;
-        return 1;
+        return ( g_last_status = 1);
     }
-    redir->heredoc_fd = pfd[0];
-    g_last_status = 0;
-    return 0;
+	redir->heredoc_fd = pfd[0];
+	return (g_last_status = 0);
 }
 
-static int hdoc_collect(const char *delim, int wfd, int hdoc_expand)
+static void	heredoc_child(t_redir *redir, int *pfd)
 {
-    char *line;
-    while (1)
-    {
-        line = readline("> ");
-        if (line == NULL)
-            break;
-        if (ft_strcmp(line, delim) == 0)
-        {
-            free(line);
-            break;
-        }
-        if (hdoc_expand)
-            expand_vars_inplace(&line, get_envp_snapshot());
-        write(wfd, line, ft_strlen(line));
-        write(wfd, "\n", 1);
-        free(line);
-    }
-    return 0;
+	signal(SIGINT, SIG_DFL); // take ctrl+c as usual
+	signal(SIGQUIT, SIG_IGN); //ingore ctrl+\ since in interractive mode in bash
+	close(pfd[0]);
+	hdoc_collect(redir->delimiter, pfd[1], redir->hdoc_expand);
+	close(pfd[1]);
+	_exit(0);
+}
+
+static int	fail_fork_close(int *pfd)
+{
+	close(pfd[0]);
+	close(pfd[1]);
+	return (g_last_status = 1);
+}
+
+static void	hdoc_collect(char *delim, int fd, int hdoc_expand)
+{
+	char	*line;
+
+	while (1)
+	{
+		line = readline("> ");
+		if (!line)
+			break ;
+		if (ft_strcmp(line, delim) == 0)
+		{
+			free(line);
+			break ;
+		}
+		if (hdoc_expand)
+			line = expand_vars(line);
+		write(fd, line, ft_strlen(line));
+		write(fd, "\n", 1);
+		free(line);
+	}
 }

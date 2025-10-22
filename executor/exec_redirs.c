@@ -6,14 +6,15 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 16:27:17 by leia              #+#    #+#             */
-/*   Updated: 2025/10/19 18:11:44 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:41:01 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
+#include "../include/minishell.h"
 #include "../include/minishell_def.h"
 
-/* forward static prototypes */
+
 static int handle_in_redir(const char *file);
 static int handle_out_redir(const char *file);
 static int handle_append_redir(const char *file);

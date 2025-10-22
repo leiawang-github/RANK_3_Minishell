@@ -6,12 +6,13 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:35:23 by leia              #+#    #+#             */
-/*   Updated: 2025/09/15 23:02:47 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:34:40 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 /* Static function declarations */
 static int builtin_implementation(t_mini *pipeline, t_env *env_list);

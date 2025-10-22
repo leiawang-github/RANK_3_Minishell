@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   exec_pipeline.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leia <leia@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/16 23:03:01 by leia              #+#    #+#             */
-/*   Updated: 2025/09/23 22:31:15 by leia             ###   ########.fr       */
+/*   Updated: 2025/10/22 17:33:38 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 /* Static function declarations */
 static int count_pipeline_nodes(t_mini *pipeline);
@@ -33,7 +34,7 @@ int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
     pid_t *pids; // array of child PIDs
     t_mini *current;
     int i;
-    
+
     // 设置信号处理，忽略 SIGINT 和 SIGQUIT 在父进程中
     signal(SIGINT, SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
@@ -60,8 +61,8 @@ int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
             // 子进程中恢复默认信号处理
             signal(SIGINT, SIG_DFL);
             signal(SIGQUIT, SIG_DFL);
-            
-            t_shell shell = 
+
+            t_shell shell =
             {
                 .pipes = pipes,
                 .node_index = i,
@@ -91,11 +92,11 @@ int exec_pipeline(t_mini *pipeline, char **envp, t_env *env_list)
     free(pipes);
     wait_for_all_children(pids, node_count);
     free(pids);
-    
+
     // 恢复REPL模式的信号处理
     signal(SIGINT, sigint_handler);
     signal(SIGQUIT, SIG_IGN);  // 与主循环保持一致
-    
+
     return g_last_status;
 }
 
@@ -171,11 +172,11 @@ static void connect_pipeline(t_shell *shell)
     }
     else // 中间节点
     {
-        dup2(shell->pipes[shell->node_index - 1][0], STDIN_FILENO); 
+        dup2(shell->pipes[shell->node_index - 1][0], STDIN_FILENO);
         dup2(shell->pipes[shell->node_index][1], STDOUT_FILENO);
-        close(shell->pipes[shell->node_index - 1][0]); 
-        close(shell->pipes[shell->node_index - 1][1]); 
-        close(shell->pipes[shell->node_index][0]); 
+        close(shell->pipes[shell->node_index - 1][0]);
+        close(shell->pipes[shell->node_index - 1][1]);
+        close(shell->pipes[shell->node_index][0]);
         close(shell->pipes[shell->node_index][1]);
     }
 }
@@ -200,12 +201,12 @@ static void close_unused_pipes(t_shell *shell)
 static int execute_pipeline_node(t_mini *cmd, t_shell *shell)
 {
     t_cmd_type cmd_type;
-    
+
     connect_pipeline(shell);
     close_unused_pipes(shell);
     if (exec_redirs(cmd->redirs) != 0)
         exit(g_last_status);
-    
+
     cmd_type = analyze_cmd(cmd);
     if (cmd_type == CMD_BUILTIN)
     {
@@ -221,7 +222,7 @@ static int execute_pipeline_node(t_mini *cmd, t_shell *shell)
             err_msg(cmd->cmd_argv[0], ": command not found", ERR_CMD_NOT_FOUND);
             exit(127);
         }
-        
+
         execve(path, cmd->cmd_argv, shell->envp);
         ft_errno(cmd->cmd_argv[0], errno, ERR_CANNOT_EXEC);
         free(path);
@@ -247,7 +248,7 @@ static int wait_for_all_children(pid_t *pids, int node_count)
             if (errno != EINTR)
                 break;
         }
-        
+
         // 记录最后一个命令的退出状态（bash 行为）
         if (i == node_count - 1)
         {
@@ -256,10 +257,10 @@ static int wait_for_all_children(pid_t *pids, int node_count)
             else if (WIFSIGNALED(status))
                 g_last_status = 128 + WTERMSIG(status);
         }
-        
+
         i++;
     }
-    
+
     return g_last_status;
 }
 
@@ -269,9 +270,9 @@ static int exec_builtin_in_pipeline(t_mini *cmd, t_env *env_list)
 
     if (!cmd || !cmd->cmd_argv || !cmd->cmd_argv[0])
         return 1;
-    
+
     cmd_name = cmd->cmd_argv[0];
-    
+
     if (ft_strcmp(cmd_name, "echo") == 0)
         return builtin_echo(cmd->cmd_argv);
     else if (ft_strcmp(cmd_name, "cd") == 0)
@@ -295,7 +296,7 @@ static int exec_builtin_in_pipeline(t_mini *cmd, t_env *env_list)
         return builtin_env(cmd->cmd_argv, env_list);
     else if (ft_strcmp(cmd_name, "exit") == 0)
         return builtin_exit(cmd->cmd_argv);
-    
+
     return 127; // Not a recognized builtin
 }
 

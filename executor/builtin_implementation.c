@@ -6,12 +6,13 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 19:54:52 by leia              #+#    #+#             */
-/*   Updated: 2025/09/15 22:56:16 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:34:34 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/executor.h"
 #include "../include/minishell.h"
+#include "../include/minishell_def.h"
 
 static int is_n_option(const char *n_option);
 

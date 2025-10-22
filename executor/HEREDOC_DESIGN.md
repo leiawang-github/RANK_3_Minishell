@@ -62,7 +62,45 @@
 
 
 ```
+```bash
+为什么需要在父进程屏蔽heredoc输入时可能收到的打断信号：
 
+每个终端设备都有一个“前台进程组（foreground process group）”，
+当你按下 Ctrl-C 时，终端驱动（tty driver）会向该组中所有进程发送 SIGINT。
+
+默认情况下：
+
+shell 启动时是前台进程组；
+
+fork 出的子进程会继承父进程的进程组；
+
+除非你调用 setpgid() 或 tcsetpgrp() 改变。
+
+所以——
+如果 heredoc 不单独设置进程组或不屏蔽信号，父进程也会收到 SIGINT，
+主 shell 会被中断输入循环（例如 readline() 报错并返回 NULL）。
+
+主流逻辑一般→ 逻辑是：
+
+父进程暂时忽略 SIGINT；
+
+子进程允许 SIGINT；
+
+用户按 Ctrl-C → 只杀掉子进程；
+
+父进程 waitpid() 得到返回，知道 heredoc 被中断；
+
+shell 保持运行。
+
+
+| 角色              | SIGINT (Ctrl-C)        | SIGQUIT (Ctrl-\)           |
+| --------------- | ---------------------- | -------------------------- |
+| **父进程 (shell)** | 临时忽略，防止被打断             | 临时忽略                       |
+| **heredoc 子进程** | 设为默认动作：用户可 Ctrl-C 中断输入 | 忽略：避免 “Quit (core dumped)” |
+
+
+
+```
 
 
 

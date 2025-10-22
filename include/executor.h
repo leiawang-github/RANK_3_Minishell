@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:08:08 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/19 18:44:05 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/22 17:21:44 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,16 +95,9 @@ int builtin_env(char **argv, t_env *env_list);
 int builtin_exit(char **argv);
 
 /* Signal handlers */
-void sigint_handler(int sig);
-void sigquit_handler(int sig);
-void setup_signal_handlers(void);
-void restore_signal_handlers(void);
-int install_heredoc_parent_signals(void);
-int restore_interactive_signals(void);
-
-
-
-int is_valid_var_name(const char *name);
+void	set_parent_ignore_signals(void (**old_i)(int), void (**old_q)(int));
+int	fail_wait_cleanup(int *pfd, void (*old_i)(int), void (*old_q)(int));
+void	restore_parent_signals(void (*old_i)(int), void (*old_q)(int));
 
 
 #endif
