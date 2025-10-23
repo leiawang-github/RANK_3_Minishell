@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:08:08 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/23 18:24:40 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/24 01:46:55 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,56 +25,15 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <sys/stat.h>
-
-/* Readline (used by heredoc) */
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "minishell_def.h"
 
-/* Forward decls */
-typedef struct s_mini   t_mini;
-
-/* Command classification */
-typedef enum e_cmd_type
-{
-    CMD_REDIR_ONLY,  /* empty command with only redirections */
-    CMD_BUILTIN,
-    CMD_EXTERNAL,
-    CMD_INVALID
-} t_cmd_type;
-
-enum e_err
-{
-    ERR_NONE,
-    ERR_SYNTAX,
-    ERR_CMD_NOT_FOUND,
-    ERR_CANNOT_EXEC,     // perm denied / is a directory / exec format
-    ERR_SYS_BUILTIN,     // 内建的系统错误
-    ERR_REDIR,           // 打开重定向失败
-    ERR_SIGINT, ERR_SIGQUIT
-};
-
-// Redirection types are now defined in minishell_def.h as t_redir_type
-
 /* Global last status (provided by shell core) */
 extern int g_last_status;
 
-/* Analyzer */
-t_cmd_type analyze_cmd(t_mini *cmd);
-
-
-/* Pipeline dispatcher */
-int execute_command(t_mini *pipeline, char **envp, t_env *env_list);
-
-/* Single/pipeline executors */
-int exec_redirs(t_redir *redirs);
-int probe_redirs(t_redir *redirs);
-int exec_builtin_in_single_cmd(t_mini *pipeline, t_env *env_list);
-int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp);
-int exec_pipeline(t_mini *head, char **envp, t_env *env_list);
-
-/* Path resolution */
-char *which_path(char *cmd_name, t_env *env_list);
+int exec_single_builtin_parent(t_mini *cmd, t_env *env_list);
+int exec_pipeline(t_mini *cmd, t_shell *shell);
 
 /* Heredoc preprocess */
 int prepare_all_heredocs(t_mini *head);
@@ -82,26 +41,31 @@ int prepare_all_heredocs(t_mini *head);
 /* Error helper */
 void error_status(enum e_err kind);
 int ft_errno(const char *file, int saved_errno, enum e_err kind);
-//int err_msg(const char *msg, enum e_err kind);
 int err_msg(const char *prefix, const char *suffix, enum e_err kind);
 
 //implementation of builtins
+int	is_child_builtin(t_mini *cmd);
 int mini_echo(char **argv);
 int mini_cd(char **argv, t_env *env);
 int mini_pwd(void);
+int	mini_unset(char **argv, t_env **envp);
 int mini_export(char **argv, t_env **env_list);
-int mini_unset(char **argv, t_env **env_list);
-int mini_env(char **argv, t_env *env_list);
+int mini_env(char **argv, t_env *env);
 int mini_exit(char **argv);
 
-/* Signal handlers */
 void	set_parent_ignore_signals(void (**old_i)(int), void (**old_q)(int));
-int	fail_wait_cleanup(int *pfd, void (*old_i)(int), void (*old_q)(int));
+int	    fail_wait_cleanup(int *pfd, void (*old_i)(int), void (*old_q)(int));
 void	restore_parent_signals(void (*old_i)(int), void (*old_q)(int));
+void	setup_child_signals(void);
 
-int	apply_all_redirs_parent(t_redir *redirs);
+int	apply_all_redirs(t_redir *redirs);
 int exec_single_builtin_parent(t_mini *cmd, t_env *env_list);
 int	run_builtin_in_parent(char **argv, t_env *env_list);
+int	restore_parent_fds(int parent_fds[3]);
+
+int	exec_one_child(t_mini *cmd, t_shell *shell);
+int	exec_all_children(t_mini *node, t_shell *sh);
+void	run_external(char **argv, char **envp);
 
 
 #endif

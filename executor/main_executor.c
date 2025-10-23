@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor.c                                         :+:      :+:    :+:   */
+/*   main_executor.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 23:02:10 by leia              #+#    #+#             */
-/*   Updated: 2025/10/23 15:45:24 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/24 02:02:39 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,25 +14,30 @@
 #include "../include/minishell.h"
 #include "../include/minishell_def.h"
 
-int execute(t_mini *cmd, t_env *env_list, char **envp)
+int	execute(t_mini *cmd, t_env *env_list, char **envp)
 {
-    int rc;
+	int		rc;
+	t_shell	shell;
 
-    if (is_empty_input(cmd))
-        return (g_last_status);
-    rc = prepare_all_heredocs(cmd);
-    if (rc != 0)
-        return (g_last_status);
-    if (cmd->next == NULL && needs_parent_execution(cmd))
-    {
-        rc = exec_single_builtin_parent(cmd, env_list);
-        restore_parent_fds_after_builtin();
-        (void)rc;
-        return (g_last_status);
-    }
-    exec_pipeline(cmd, envp, env_list);
-    wait_for_all_children();
-    return (g_last_status);
+	if (is_empty_input(cmd))
+		return (g_last_status);
+	rc = prepare_all_heredocs(cmd);
+	if (rc != 0)
+		return (g_last_status);
+	if (cmd->next == NULL && needs_parent_execution(cmd))
+	{
+		exec_single_builtin_parent(cmd, env_list);
+		return (g_last_status);
+	}
+	init_shell(&shell, envp, env_list);
+	rc = exec_pipeline(cmd,&shell);
+	if (rc == 0)
+		wait_for_all_children(shell.pids, shell.node_count);
+	if (shell.pipes)
+		free(shell.pipes);
+	if (shell.pids)
+		free(shell.pids);
+	return (g_last_status);
 }
 
 static int is_empty_input(t_mini *mini_head)
@@ -76,4 +81,46 @@ static int needs_parent_execution(t_mini *cmd)
     return (0); /* echo/pwd/env/external → not parent-only */
 }
 
+static void	init_shell(t_shell *sh, t_env *env_list, char **envp)
+{
+	sh->pipes = NULL;
+	sh->pids = NULL;
+	sh->node_index = 0;
+	sh->node_count = 0;
+	sh->prev_read_end = -1;
+	sh->env_list = env_list;
+	sh->vars = NULL;
+	sh->envp = envp;
+}
 
+int	wait_for_all_children(pid_t *pids, int n)
+{
+	int		waited;
+	int		st;
+	pid_t	pid;
+
+	if (!pids || n <= 0)
+		return (0);
+	waited = 0;
+	while (waited < n)
+	{
+		pid = waitpid(-1, &st, 0);
+		if (pid <= 0)
+			break ;
+		if (pid == pids[n - 1])
+		{
+			if (WIFSIGNALED(st))
+			{
+				if (WTERMSIG(st) == SIGINT)
+					write(1, "\n", 1);
+				g_last_status = 128 + WTERMSIG(st);
+			}
+			else if (WIFEXITED(st))
+				g_last_status = WEXITSTATUS(st);
+			else
+				g_last_status = 1;
+		}
+		waited++;
+	}
+	return (0);
+}

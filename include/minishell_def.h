@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:06:02 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/23 12:37:01 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/24 01:51:25 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,7 +97,6 @@ typedef struct	s_redir
     struct s_redir	*next;   // pointer for linking multiple redirs
 }				t_redir;
 
-
 typedef struct	s_mini //! terminar de definir
 {
 	char			**argv;
@@ -106,23 +105,32 @@ typedef struct	s_mini //! terminar de definir
 	struct s_mini	*next;
 }				t_mini;
 
+typedef struct s_shell
+{
+	int     (*pipes)[2];        /* pipes[i][0] = read, pipes[i][1] = write */
+	int		node_index;     /* current command index in pipeline */
+	int		node_count;     /* total number of pipeline nodes */
+	pid_t	*pids;          /* all child pids */
+	int		prev_read_end;        /* read end of previous pipe */
+	t_env	*env_list;      /* exported env vars */
+	t_env	*vars;          /* internal vars (non-exported) */
+	char	**envp;         /* envp array for execve */
+}	t_shell;
 
-
-//execute
-/* error.h 或 minishell.h */
 #ifndef ERROR_H
 # define ERROR_H
 
 enum e_err
 {
-    ERR_NONE,   // 无错误
-    ERR_PARSER, // 语法或解析错误
-    ERR_EXEC,   // 执行阶段错误（比如 command not found）
-    ERR_SYS,    // 系统调用错误（open、pipe、fork 等失败）
-    ERR_BUILTIN // 内建命令错误
-};
+    ERR_NONE,
+    ERR_SYNTAX,
+    ERR_CMD_NOT_FOUND,
+    ERR_CANNOT_EXEC,     // perm denied / is a directory / exec format
+    ERR_SYS_BUILTIN,     // 内建的系统错误
+    ERR_REDIR,           // 打开重定向失败
+    ERR_SIGINT,
+	ERR_SIGQUIT
+}t_err;
 
 #endif
-
-
 #endif

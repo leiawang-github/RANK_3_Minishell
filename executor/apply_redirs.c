@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   apply_redir.c                                      :+:      :+:    :+:   */
+/*   apply_redirs.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/29 16:27:17 by leia              #+#    #+#             */
-/*   Updated: 2025/10/23 16:37:52 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/24 01:30:26 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "../include/minishell.h"
 #include "../include/minishell_def.h"
 
-int	apply_all_redirs_parent(t_redir *redirs)
+int	apply_all_redirs(t_redir *redirs)
 {
 	t_redir	*cur;
 

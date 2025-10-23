@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 17:35:23 by leia              #+#    #+#             */
-/*   Updated: 2025/10/23 18:22:28 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/24 01:56:13 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,22 +88,30 @@ shell 必须在执行 builtin 函数前就完成重定向；
 
 */
 
-int exec_single_builtin_parent(t_mini *cmd, t_env *env_list) //single cmd only, exec in parent process
+int	exec_single_builtin_parent(t_mini *cmd, t_env *env_list)
 {
-	int parent_fds[3];
-    int return_value;
+	int	parent_fds[3];
+	int	ret;
 
-    if (backup_parent_fds(parent_fds) != 0)
-        return (g_last_status = 1, 1);
-    if (apply_all_redirs_parent(cmd->redirs) != 0)
-    {
-        restore_parent_fds(parent_fds);
-        return (g_last_status = 1, 1);
-    }
-    return_value = run_builtin_in_parent(cmd->argv, env_list);
-    g_last_status = (return_value & 0xFF);
-    restore_parent_fds(parent_fds);
-    return (g_last_status);
+	if (backup_parent_fds(parent_fds) != 0)
+	{
+		g_last_status = 1;
+		return (1);
+	}
+	if (apply_all_redirs(cmd->redirs) != 0)
+	{
+		restore_parent_fds(parent_fds);
+		g_last_status = 1;
+		return (1);
+	}
+	ret = run_builtin_in_parent(cmd->argv, env_list);
+	g_last_status = ret;
+	if (g_last_status < 0)
+		g_last_status = 1;
+	if (g_last_status > 255)
+		g_last_status = g_last_status % 256;
+	restore_parent_fds(parent_fds);
+	return (g_last_status);
 }
 
 static int	backup_parent_fds(int parent_fds[3])
@@ -130,7 +138,7 @@ static int	backup_parent_fds(int parent_fds[3])
 	return (0);
 }
 
-static int	restore_parent_fds(int parent_fds[3])
+int	restore_parent_fds(int parent_fds[3])
 {
 	int i;
 	int rc;

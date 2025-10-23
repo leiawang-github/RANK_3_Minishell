@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   t_shell_handling.h                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: codespace <codespace@student.42.fr>        +#+  +:+       +#+        */
+/*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/24 20:36:53 by rtiberio          #+#    #+#             */
-/*   Updated: 2025/09/26 12:51:42 by codespace        ###   ########.fr       */
+/*   Updated: 2025/10/23 23:07:55 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,5 +43,6 @@ t_env	*new_var(char *src, int i);
 //t_shell/env_to_array.c
 char	**env_to_array(t_env *env_list);
 void	free_env_array(char **envp);
+int	count_env_nodes(t_env *env_list);
 
 #endif

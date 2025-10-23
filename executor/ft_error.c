@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/06 05:42:29 by leia              #+#    #+#             */
-/*   Updated: 2025/10/22 17:35:16 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/23 23:24:25 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,6 @@ int ft_errno(const char *file, int saved_errno, enum e_err kind)
     error_status(kind);
     return -1;
 }
-
 
 /* Note：支持两个字符串拼接，避免内存分配
 Shell 内部逻辑错误才调用这个函数， shell级别的
