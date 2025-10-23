@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 19:54:52 by leia              #+#    #+#             */
-/*   Updated: 2025/10/22 17:34:34 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/23 18:24:01 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,52 @@
 #include "../include/minishell_def.h"
 
 static int is_n_option(const char *n_option);
+
+static int	has_dash_option(char **argv)
+{
+	int i;
+
+	if (!argv || !argv[1])
+		return (0);
+	i = 1;
+	while (argv[i])
+	{
+		if (argv[i][0] == '-')
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int	run_builtin_in_parent(char **argv, t_env *env_list)
+{
+	if (!argv || !argv[0])
+		return (0);
+	if (ft_strcmp(argv[0], "cd") == 0)
+		return (mini_cd(argv, env_list));
+	if (ft_strcmp(argv[0], "unset") == 0)
+		return (mini_unset(argv, env_list));
+
+	if (ft_strcmp(argv[0], "exit") == 0)
+	{
+		mini_exit(argv, env_list);
+		return (0); /* 不会到这里；为了静态检查留一返回 */
+	}
+
+	/* export（no options）：有参数或非法选项 → 父进程；无参数仅打印 */
+	if (ft_strcmp(argv[0], "export") == 0)
+	{
+		if (has_dash_option(argv))
+			return (mini_export(argv, env_list));
+		if (argv[1] != NULL)
+			return (mini_export(argv, env_list));
+		/* 无参数：如果你顶层把它路由到子进程，这里一般不会进来；
+		   若进来，也允许在父进程打印环境并返回 0： */
+		return (mini_export(argv, env_list));
+	}
+	/* 其他内建（echo/pwd/env）不该走到父进程；返回 0 保守处理 */
+	return (0);
+}
 
 int builtin_echo(char **argv)
 {

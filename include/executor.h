@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:08:08 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/23 16:34:39 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/23 18:24:40 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,13 +86,13 @@ int ft_errno(const char *file, int saved_errno, enum e_err kind);
 int err_msg(const char *prefix, const char *suffix, enum e_err kind);
 
 //implementation of builtins
-int builtin_echo(char **argv);
-int builtin_cd(char **argv, t_env *env);
-int builtin_pwd(void);
-int builtin_export(char **argv, t_env **env_list);
-int builtin_unset(char **argv, t_env **env_list);
-int builtin_env(char **argv, t_env *env_list);
-int builtin_exit(char **argv);
+int mini_echo(char **argv);
+int mini_cd(char **argv, t_env *env);
+int mini_pwd(void);
+int mini_export(char **argv, t_env **env_list);
+int mini_unset(char **argv, t_env **env_list);
+int mini_env(char **argv, t_env *env_list);
+int mini_exit(char **argv);
 
 /* Signal handlers */
 void	set_parent_ignore_signals(void (**old_i)(int), void (**old_q)(int));
@@ -100,6 +100,8 @@ int	fail_wait_cleanup(int *pfd, void (*old_i)(int), void (*old_q)(int));
 void	restore_parent_signals(void (*old_i)(int), void (*old_q)(int));
 
 int	apply_all_redirs_parent(t_redir *redirs);
+int exec_single_builtin_parent(t_mini *cmd, t_env *env_list);
+int	run_builtin_in_parent(char **argv, t_env *env_list);
 
 
 #endif
