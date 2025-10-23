@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:06:02 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/22 17:38:11 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/23 12:37:01 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,8 +100,7 @@ typedef struct	s_redir
 
 typedef struct	s_mini //! terminar de definir
 {
-	char			*cmd_name; //para el primer argumento
-	char			**cmd_argv;
+	char			**argv;
 	t_redir			*redirs;
 	bool			is_builtin;
 	struct s_mini	*next;

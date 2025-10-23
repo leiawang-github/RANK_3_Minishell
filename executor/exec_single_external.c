@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 23:11:22 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/22 17:34:47 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/23 16:20:35 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,14 @@ PATH环境变量搜索 search_in_path()：
 线程安全的字符串分割实现
 类似于 strtok_r 的功能
 用于解析 PATH 环境变量
+
+在执行外部命令前，shell 会：
+
+fork() 创建子进程；
+
+在子进程中设置执行环境（包括环境变量、当前目录、重定向等）；
+
+execve() 启动目标程序。
 */
 
 int exec_single_external(t_mini *pipeline, t_env *env_list, char **envp)

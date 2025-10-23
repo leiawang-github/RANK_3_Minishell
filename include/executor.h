@@ -6,7 +6,7 @@
 /*   By: leiwang <leiwang@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 18:08:08 by leiwang           #+#    #+#             */
-/*   Updated: 2025/10/22 17:21:44 by leiwang          ###   ########.fr       */
+/*   Updated: 2025/10/23 16:34:39 by leiwang          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ int exec_pipeline(t_mini *head, char **envp, t_env *env_list);
 char *which_path(char *cmd_name, t_env *env_list);
 
 /* Heredoc preprocess */
-int preprocess_heredoc(t_mini *head);
+int prepare_all_heredocs(t_mini *head);
 
 /* Error helper */
 void error_status(enum e_err kind);
@@ -98,6 +98,8 @@ int builtin_exit(char **argv);
 void	set_parent_ignore_signals(void (**old_i)(int), void (**old_q)(int));
 int	fail_wait_cleanup(int *pfd, void (*old_i)(int), void (*old_q)(int));
 void	restore_parent_signals(void (*old_i)(int), void (*old_q)(int));
+
+int	apply_all_redirs_parent(t_redir *redirs);
 
 
 #endif
